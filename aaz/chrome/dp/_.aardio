@@ -1,0 +1,294 @@
+﻿import chrome.path;
+import process;
+import wsock;
+import inet.whttp;
+import inet.url;
+import win.timer;
+import thread.command;
+import aaz.libhpsocket.listener.httpClient;
+import aaz.libhpsocket.component.httpClient;
+
+namespace aaz.chrome;
+class dp{
+	ctor(chromeExePath){	
+		if(chromeExePath){
+			if(!..io.exist(chromeExePath)){
+				error(chromeExePath ++ " 文件不存在",2);
+			}
+			this.chromePath = chromeExePath;
+		}
+		else {
+			var chromePath = ..chrome.path();
+			if( !chromePath ){
+				return null, "系统未安装chrome";
+			}
+			this.chromePath = chromePath;
+		}
+		
+
+		var whttp = ..inet.whttp();
+		whttp.setTimeouts(3000, 3000, 3000);
+		
+		var listener = ..aaz.libhpsocket.listener.httpClient();
+		var component = ..aaz.libhpsocket.component.httpClient(listener);
+			
+		listener.onThreadCreated = function(){
+			import web.json;
+			import thread.command;
+			import aaz.libhpsocket.helper.httpClient;
+		}
+		
+		listener.onHandShake = function(component, connId){
+			var wsPath = ..thread.get("wsPath")
+			aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(component, wsPath);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			if( 1!= upgradeType ){
+				return 2; 
+			}
+			if(!aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component)){
+				return 2; 
+			}
+			thread.command.post("onChromeConnect")
+		}
+		
+		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+			aaz.libhpsocket.helper.httpClient.reallocString(component, bodyLen);
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){
+			aaz.libhpsocket.helper.httpClient.appendString(component, pData, len);	
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			var json = aaz.libhpsocket.helper.httpClient.getString(component);
+			if( json ){ // ..io.print( json )
+				var t = web.json.tryParse(json)
+				if( type(t) == type.table ){
+					// 请求回复
+					if(t.id){
+						thread.command.post("onChromeResponse", t.id, t.result, t.error);
+					} // 订阅事件
+					elseif(t.method){
+					  	thread.command.post("onChromeEvent", t.method, t.params);
+					}
+				}
+			}
+		}
+		
+		listener.onClose = function(component,connId,enOperation,errCode){
+			aaz.libhpsocket.helper.httpClient.reallocString(component, 0);
+			thread.command.post( "onChromeClose")
+		}
+		
+		var requests = {};
+		var events = {};
+		var requestId = 0;
+		this.timeout = 10000;
+		
+		var timer = ..win.timer();
+		timer.onTimer = function(){
+			if(!this.fiber) return ; 
+			if(fiber.status(this.fiber) != fiber.status.running ) return ; 
+			
+			for(id, tick in requests){
+				var now = ..time.tick();
+				if((now-tick)>this.timeout){
+					requests[id] = null;
+    				..fiber.resume(this.fiber, false, "timeout");
+				}
+			}
+			
+			for(name, tick in events){
+				var now = ..time.tick();
+				if((now-tick)>this.timeout){
+					requests[name] = null;
+    				..fiber.resume(this.fiber, false, "timeout");
+				}
+			}
+		}
+		
+		var thCmd = ..thread.command();
+		thCmd.onChromeResponse = function(id, result, err){
+    		if(requests[id]){
+    			..fiber.resume(this.fiber, result, err);
+    			requests[id] = null;
+    		}	
+		}
+		
+		thCmd.onChromeEvent = function(method, params){	
+			this.onChromeEvent(method, params)		
+			if(events[method]){
+				..fiber.resume(this.fiber, params)
+				events[method] = null;
+			}
+		}
+		
+		thCmd.onChromeConnect = function(){
+			..fiber.resume(this.fiber, true)
+		}
+
+		..table.gc(this, "close");
+	}
+	
+	close = function(){
+		if(this.chromePid){
+			..process.kill(this.chromePid)
+		}
+		component.stop();
+		listener.destroy();	
+	}
+	
+	init = function(){
+		requests = {};
+		requestId = 0;
+		events = {};
+	}
+	
+	openChrome = function(headless=false, userDataDir="\chrome.remote.userdata", port){
+		port := ..wsock.getFreePort()
+		var cmd = {
+			"--remote-debugging-port=" ++ port;
+			"--user-data-dir=" ++ ..io.createDir(userDataDir);
+		//	"--disable-gpu";
+		}
+		if(headless){
+			..table.push(cmd, "--headless");
+		}
+		
+		cmd = ..string.join(cmd, " ");
+		var pid, err = ..process.execute(this.chromePath, cmd);
+		if( !pid ){
+			return null, err; 
+		}
+		this.chromePid = pid;
+		this.chromePort = port;
+		
+		return true; 
+	}
+	
+	getWsPath = function(){
+		var url = "http://localhost:" ++ this.chromePort ++ "/json";
+		var json, err, code = whttp.get(url)
+		if( !json ){
+			return null, "获取 json 失败，原因：" ++ err; 
+		}
+		
+		var t = ..web.json.tryParse(json)
+		if(type(t) != type.table){
+			return null, "解析 json 失败"; 
+		}
+		var wsDebuggerUrl = t[1].webSocketDebuggerUrl;
+		if(!t[1].webSocketDebuggerUrl){
+			return null, "获取 webSocketDebuggerUrl 失败"; 
+		}
+		var uri = ..inet.url.split(t[1].webSocketDebuggerUrl);
+		return uri.path; 		
+	}	
+	
+	open = function(headless, userDataDir, port){
+		if(this.chromePid){
+			..process.kill(this.chromePid)
+		}
+		var ok, err = this.openChrome(headless, userDataDir, port);
+		if(!ok){
+			return false, "启动 chrome 失败，原因：" ++ err; 
+		}
+		
+		var wsPath, err = this.getWsPath();
+		if(!wsPath){
+			return false, err; 
+		}
+		..thread.set("wsPath", wsPath);
+		component.start("localhost", this.chromePort);
+		return true;
+	}
+	
+	connect = function(){
+		return ..fiber.yield(); 
+	}
+	
+	onChromeEvent = function(method, params){
+		
+	}
+
+	run = function(func){
+		this.init();
+		var fib, err = ..fiber.create(func); 
+		if(!fib){
+			return null, "创建协程失败，原因：" ++  err; 
+		}
+		var ok, err = ..fiber.resume(fib);	
+		if(!ok){
+			return false, "启动协程失败，原因：" ++  err; 
+		}
+		this.fiber = fib;
+		return true; 
+	}
+	
+	waitEvent = function(name){
+		events[name] = {
+			tick = ..time.tick();
+		}
+		return ..fiber.yield(); 
+	}
+	
+	xcall = function(method, params){
+		requestId++;
+		
+		var json = ..web.json.stringify(
+			id = requestId;
+			method = method;
+			params = params;
+		);
+		var ok = component.sendWsMessage(json);
+		if(!ok){
+			return false, "发送请求数据失败"; 
+		}
+		
+		requests[requestId] = {
+			tick = ..time.tick();
+		}
+		return ..fiber.yield();
+	}
+	
+	@_meta;	
+}
+namespace dp{
+    _meta = {
+    	_get = function(k){
+    		var t = type(k)
+    		if( t == type.string ){
+    			if( owner[["method"]] ){
+    				k = owner[["method"]] ++ "." ++ k;  
+    			}
+    			owner[[k]] = {
+    				xcall = owner.xcall;
+    				method = k;
+    				@_meta;
+    			}
+    			return owner[[k]]; 
+    		}
+    	}
+	
+    	_call = function(params){
+    		return owner.xcall(owner.method, params); 	
+    	}	
+    }  	
+}
+// https://chromedevtools.github.io/devtools-protocol/
+
+/**intellisense(aaz.chrome)
+dp = 谷歌开发者工具协议库
+dp(.(谷歌浏览器exe路径 可选) = !cdp.
+end intellisense**/
+
+/**intellisense(!cdp)
+timeout = 设置请求超时，单位毫秒，默认 10000
+open(.(开启无头模式, 临时目录, 端口) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
+connect() = 连接浏览器
+run(任务函数) = 运行任务函数
+waitEvent("事件名字") = 等待指定事件到达，成功返回事件表
+end intellisense**/
+
