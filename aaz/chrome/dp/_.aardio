@@ -90,7 +90,6 @@ class dp{
 		var requestId = 0;
 		var eventsWaiting = {};
 		this.timeout = 10000;
-		this.onChromeEvent = function(method, params){};
 		
 		var checkTimeout = function(tab){
 			if(!this.fiber) return ; 
@@ -124,7 +123,9 @@ class dp{
 				..fiber.resume(this.fiber, params)
 				eventsWaiting[method] = null;
 			}
-			this.onChromeEvent(method, params)	
+			if(this[["onChromeEvent"]]){
+				this.onChromeEvent(method, params)
+			}	
 		}
 		
 		thCmd.onChromeConnect = function(){
