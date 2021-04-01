@@ -10,39 +10,53 @@ io.open()
 
 import aaz.chrome.dp;
 
-var cdp = aaz.chrome.dp()
+var cdp = aaz.chrome.dp();
 // 接收事件
 cdp.onChromeEvent = function(method, params){
-	io.print(method)
-	io.print(table.tostring(params))
-	io.print()
+	io.print("事件名字：", method);
+	io.print("事件内容：", table.tostring(params));
 }
 
 var task = function(){
  	// 打开浏览器
 	var ok, err = cdp.open()
     if(!ok){
+         io.print("打开浏览器失败", err);
     	return ; 
     }
 	
 	// 连接浏览器
-    cdp.connect();
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
     
 	// 订阅 Page 事件	
-	cdp.Page.enable(
-		url = "https://www.so.com";
-	)
+	var ok, err = cdp.Page.enable();
+    if(!ok){
+        io.print("订阅 Page 事件失败", err);
+    	return ; 
+    }
 	
 	// 打开网址
-	cdp.Page.navigate(
+	var ok, err = cdp.Page.navigate(
 		url = "https://www.so.com";
 	)
+    if(!ok){
+        io.print("打开网址失败", err)
+    	return ; 
+    }
 	
 	// 等待页面加载完成
-	cdp.waitEvent( "Page.loadEventFired" )
+	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    if(!ok){
+        io.print("打开网址失败", err);
+    	return ; 
+    }
 
 	// 运行脚本
-	cdp.Runtime.evaluate(
+	var ok, err = cdp.Runtime.evaluate(
 		expression = /**
        document.querySelector("#input").value = "aardio";
        document.querySelector("#search-button").click();
@@ -52,7 +66,7 @@ var task = function(){
 }
 
 winform.button.oncommand = function(id,event){
-	io.print( cdp.run(task) )
+	io.print(cdp.run(task));
 }
 
 winform.show();

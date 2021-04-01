@@ -19,12 +19,11 @@ class dp{
 		}
 		else {
 			var chromePath = ..chrome.path();
-			if( !chromePath ){
+			if(!chromePath){
 				return null, "系统未安装chrome";
 			}
 			this.chromePath = chromePath;
 		}
-		
 
 		var whttp = ..inet.whttp();
 		whttp.setTimeouts(3000, 3000, 3000);
@@ -44,7 +43,7 @@ class dp{
 		}
 		
 		listener.onUpgrade = function(component, connId, upgradeType){
-			if( 1!= upgradeType ){
+			if(1!= upgradeType){
 				return 2; 
 			}
 			if(!aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component)){
@@ -86,6 +85,8 @@ class dp{
 		var events = {};
 		var requestId = 0;
 		this.timeout = 10000;
+		
+		this.onChromeEvent = function(method, params){};
 		
 		var timer = ..win.timer();
 		timer.onTimer = function(){
@@ -159,8 +160,8 @@ class dp{
 		
 		cmd = ..string.join(cmd, " ");
 		var pid, err = ..process.execute(this.chromePath, cmd);
-		if( !pid ){
-			return null, err; 
+		if(!pid){
+			return null, "启动 chrome 失败，原因：" ++ err; 
 		}
 		this.chromePid = pid;
 		this.chromePort = port;
@@ -170,20 +171,19 @@ class dp{
 	
 	getWsPath = function(){
 		var url = "http://localhost:" ++ this.chromePort ++ "/json";
-		var json, err, code = whttp.get(url)
-		if( !json ){
-			return null, "获取 json 失败，原因：" ++ err; 
+		var html, err, code = whttp.get(url)
+		if(!html){
+			return null, "网络连接有误，获取 webSocketDebuggerUrl 失败，原因：" ++ err; 
 		}
 		
-		var t = ..web.json.tryParse(json)
-		if(type(t) != type.table){
-			return null, "解析 json 失败"; 
+		var tab = ..web.json.parse(html);
+		if(!#tab){
+			return null, "没有可用 websocket 目标的列表"; 
 		}
-		var wsDebuggerUrl = t[1].webSocketDebuggerUrl;
-		if(!t[1].webSocketDebuggerUrl){
+		if(!tab[1].webSocketDebuggerUrl){
 			return null, "获取 webSocketDebuggerUrl 失败"; 
 		}
-		var uri = ..inet.url.split(t[1].webSocketDebuggerUrl);
+		var uri = ..inet.url.split(tab[1].webSocketDebuggerUrl);
 		return uri.path; 		
 	}	
 	
@@ -201,18 +201,17 @@ class dp{
 			return false, err; 
 		}
 		..thread.set("wsPath", wsPath);
-		component.start("localhost", this.chromePort);
 		return true;
 	}
 	
 	connect = function(){
+		var ok, err = component.start("localhost", this.chromePort);
+		if(!ok){
+			return null, "连接 chrome 失败，原因：" ++ err; 
+		}
 		return ..fiber.yield(); 
 	}
 	
-	onChromeEvent = function(method, params){
-		
-	}
-
 	run = function(func){
 		this.init();
 		var fib, err = ..fiber.create(func); 
@@ -260,7 +259,7 @@ namespace dp{
     	_get = function(k){
     		var t = type(k)
     		if( t == type.string ){
-    			if( owner[["method"]] ){
+    			if(owner[["method"]]){
     				k = owner[["method"]] ++ "." ++ k;  
     			}
     			owner[[k]] = {
@@ -287,8 +286,8 @@ end intellisense**/
 /**intellisense(!cdp)
 timeout = 设置请求超时，单位毫秒，默认 10000
 open(.(开启无头模式, 临时目录, 端口) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
-connect() = 连接浏览器
+connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
 run(任务函数) = 运行任务函数
-waitEvent("事件名字") = 等待指定事件到达，成功返回事件表
+waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
 end intellisense**/
 
