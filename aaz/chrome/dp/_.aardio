@@ -62,12 +62,17 @@ class dp{
 		
 		listener.onWsMessageComplete = function(component, connId){
 			var json = aaz.libhpsocket.helper.httpClient.getString(component);
-			if( json ){ // ..io.print( json )
+			if( json ){
 				var t = web.json.tryParse(json)
 				if( type(t) == type.table ){
 					// 请求回复
 					if(t.id){
-						thread.command.post("onChromeResponse", t.id, t.result, t.error);
+						if(t.error){
+							thread.command.post("onChromeResponse", t.id, null, t.error.message);
+						}
+						else {
+							thread.command.post("onChromeResponse", t.id, t.result);
+						}
 					} // 订阅事件
 					elseif(t.method){
 					  	thread.command.post("onChromeEvent", t.method, t.params);

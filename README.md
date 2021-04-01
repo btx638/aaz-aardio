@@ -3,7 +3,7 @@
 
 #### Depend on [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
 #### example
-
+* 简单模拟点击
 ````javascript
 import win.ui;
 /*DSG{{*/
@@ -80,6 +80,7 @@ winform.show();
 win.loopMessage();
 ````
 
+* 获取节点属性
 ````javascript
 import win.ui;
 /*DSG{{*/
@@ -170,6 +171,118 @@ var task = function(){
 
 winform.button.oncommand = function(id,event){
 	io.print(cdp.run(task));
+}
+
+winform.show();
+win.loopMessage();
+return winform;
+````
+
+* 用脚本获取节点内容
+````javascript
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=361;bottom=208)
+winform.add(
+button={cls="button";text="运行";left=49;top=51;right=291;bottom=144;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp = aaz.chrome.dp()
+
+var task = function(){
+    io.print("任务开始")
+ 	// 打开浏览器并开启 headless 模式，即不显示界面
+	var ok, err = cdp.open(true)
+    if(!ok){
+         io.print("打开浏览器失败，原因: ", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败，原因: ", err);
+    	return ; 
+    }
+    
+	// 订阅 Page 事件	
+	var ok, err = cdp.Page.enable();
+    if(!ok){
+        io.print("订阅 Page 事件失败，原因: ", err);
+    	return ; 
+    }
+	
+	// 打开网址
+	var ok, err = cdp.Page.navigate(
+		url = "https://www.htmlayout.cn/";
+	)
+    if(!ok){
+        io.print("打开网址失败，原因: ", err)
+    	return ; 
+    }
+	
+	// 等待页面加载完成
+	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    if(!ok){
+        io.print("打开网址失败，原因: ", err);
+    	return ; 
+    }
+ 	
+	// 编译脚本
+	cdp.Runtime.enable()
+	var script, err = cdp.Runtime.compileScript(
+		sourceURL = "https://www.htmlayout.cn/";
+		persistScript = true;
+		expression = /**
+		 var getTitles = function(){
+       		var doms = document.querySelectorAll(".home-box-list .post-list .item-content h2 a");
+       		var ret = new Array();
+       		for(var i=0;i<doms.length;i++){
+           		ret.push(doms[i].innerText);
+       		}
+       		return ret; 
+		 }
+		**/
+	)
+	if(!script){
+        io.print("编译脚本失败，原因: ", err);
+    	return ; 
+	}
+	
+	// 运行编译好的脚本
+	var ret, err = cdp.Runtime.runScript(
+		scriptId = 	script.scriptId;
+		returnByValue = true;
+	)
+	if(!ret){
+		io.print("运行脚本失败，原因: " ++ err)
+		return ; 
+	}
+	
+	// 调用函数
+	var ret, err = cdp.Runtime.evaluate(
+		expression = "getTitles()";
+		returnByValue = true;
+	)
+	if(!ret){
+		io.print("调用函数失败，原因: " ++ err)
+		return ; 
+	}
+	
+	for(i=1;#ret.result.value;1){
+		io.print(ret.result.value[i])
+	}
+	
+	io.print("任务完成")
+}
+
+winform.button.oncommand = function(id,event){
+	cdp.run(task)
 }
 
 winform.show();

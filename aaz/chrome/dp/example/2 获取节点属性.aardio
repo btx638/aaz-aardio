@@ -7,7 +7,7 @@ button={cls="button";text="开始";left=37;top=36;right=203;bottom=115;z=1}
 /*}}*/
 
 io.open()
-import console
+
 import aaz.chrome.dp;
 
 var cdp = aaz.chrome.dp()
