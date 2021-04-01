@@ -13,6 +13,8 @@ import aaz.chrome.dp;
 var cdp = aaz.chrome.dp()
 
 var task = function(){
+    io.print("完成开始")
+    
  	// 打开浏览器
 	var ok, err = cdp.open()
     if(!ok){
@@ -57,7 +59,7 @@ var task = function(){
     	return ; 
     }
     
-    // 读取帖子列表
+    // 读取帖子的超链接
 	var doms, err = cdp.DOM.querySelectorAll(
 		nodeId = document.root.nodeId;
 		selector = ".home-box-list .post-list .item-content h2 a";
@@ -67,7 +69,7 @@ var task = function(){
     	return ; 
     }
     
-    // 读取帖子的超链接
+    // 读取链接的属性
 	for(i=1;#doms.nodeIds;1){
 		var ret, err = cdp.DOM.getAttributes(
 			nodeId = doms.nodeIds[i]
@@ -83,6 +85,11 @@ var task = function(){
 			io.print(k, v);
 		}
 	}
+	
+	// 关必浏览器
+	cdp.Browser.close()
+	
+	io.print("完成任务")
 }
 
 winform.button.oncommand = function(id,event){

@@ -123,8 +123,14 @@ class dp{
 				..fiber.resume(this.fiber, params)
 				eventsWaiting[method] = null;
 			}
+			
+
 			if(this[["onChromeEvent"]]){
 				this.onChromeEvent(method, params)
+			}
+			
+			if( method == "Inspector.detached"){
+				this.chromePid = null;
 			}	
 		}
 		

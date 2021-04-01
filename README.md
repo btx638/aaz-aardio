@@ -182,59 +182,89 @@ return winform;
 ````javascript
 import win.ui;
 /*DSG{{*/
-var winform = win.form(text="aardio form";right=361;bottom=208)
+var winform = win.form(text="aardio form";right=629;bottom=362)
 winform.add(
-button={cls="button";text="运行";left=49;top=51;right=291;bottom=144;z=1}
+button={cls="button";text="运行";left=528;top=290;right=617;bottom=326;z=1};
+lvResult={cls="listview";left=9;top=6;right=621;bottom=278;edge=1;fullRow=1;z=2}
 )
 /*}}*/
 
-io.open()
-
+import win.ui.statusbar;
 import aaz.chrome.dp;
 
 var cdp = aaz.chrome.dp()
 
+var statusbar = win.ui.statusbar(winform);
+statusbar.addItem("运行状态：", 70);
+statusbar.addItem("", -1);
+
+winform.lvResult.insertColumn("序号",50);
+winform.lvResult.insertColumn("标题",-1);
+
+var uiLog = function(str){
+	statusbar.setText(str, 2);
+}
+
+var uiResult = function(str){
+	winform.lvResult.addItem({
+		tostring(winform.lvResult.count+1);
+		str
+	})
+}
+
+var uiInit = function(){
+	uiLog("任务开始", 2);
+	winform.lvResult.clear();
+}
+
 var task = function(){
-    io.print("任务开始")
- 	// 打开浏览器并开启 headless 模式，即不显示界面
-	var ok, err = cdp.open(true)
+    uiInit();
+ 	
+ 	uiLog("正在打开浏览器...");
+	var ok, err = cdp.open(true); // 打开浏览器并开启 headless 模式，即不显示界面
     if(!ok){
-         io.print("打开浏览器失败，原因: ", err);
+        uiLog("打开浏览器失败，原因: " ++ err);
     	return ; 
     }
 	
-	// 连接浏览器
+	uiLog("正在连接浏览器...");
     var ok, err = cdp.connect();
     if(!ok){
-        io.print("连接浏览器失败，原因: ", err);
+        uiLog("连接浏览器失败，原因: " ++ err);
     	return ; 
     }
     
-	// 订阅 Page 事件	
+	uiLog("正在订阅 Page 事件...");	
 	var ok, err = cdp.Page.enable();
     if(!ok){
-        io.print("订阅 Page 事件失败，原因: ", err);
+        uiLog("订阅 Page 事件失败，原因:" ++ err);	
     	return ; 
     }
 	
 	// 打开网址
+	uiLog("正在打开网址 https://www.htmlayout.cn/ ...");	
 	var ok, err = cdp.Page.navigate(
 		url = "https://www.htmlayout.cn/";
 	)
     if(!ok){
-        io.print("打开网址失败，原因: ", err)
+        uiLog("打开网址 https://www.htmlayout.cn/ ，原因:" ++ err);
     	return ; 
     }
 	
-	// 等待页面加载完成
+	uiLog("正在等待页面加载完成...");
 	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
     if(!ok){
-        io.print("打开网址失败，原因: ", err);
+        uiLog("等待页面加载完成失败，原因: " ++ err);
     	return ; 
     }
  	
-	// 编译脚本
-	cdp.Runtime.enable()
+	uiLog("正在开启 runtime...");
+	var ok, err = cdp.Runtime.enable()
+	if(!ok){
+		uiLog("开启 runtime 失败，原因：" ++ err);
+	}
+	
+	uiLog("正在编译脚本...");
 	var script, err = cdp.Runtime.compileScript(
 		sourceURL = "https://www.htmlayout.cn/";
 		persistScript = true;
@@ -250,35 +280,44 @@ var task = function(){
 		**/
 	)
 	if(!script){
-        io.print("编译脚本失败，原因: ", err);
+        uiLog("编译脚本失败，原因: " ++ err);
     	return ; 
 	}
 	
-	// 运行编译好的脚本
+	uiLog("正在运行脚本...");
 	var ret, err = cdp.Runtime.runScript(
 		scriptId = 	script.scriptId;
 		returnByValue = true;
 	)
 	if(!ret){
-		io.print("运行脚本失败，原因: " ++ err)
+		uiLog("运行脚本失败，原因:" ++ err);
 		return ; 
 	}
 	
-	// 调用函数
+	uiLog("对全局对象的表达式求值...");
 	var ret, err = cdp.Runtime.evaluate(
 		expression = "getTitles()";
 		returnByValue = true;
 	)
 	if(!ret){
-		io.print("调用函数失败，原因: " ++ err)
+		uiLog("对全局对象的表达式求值失败，原因:" ++ err);
 		return ; 
 	}
 	
+	// 读取结果
 	for(i=1;#ret.result.value;1){
-		io.print(ret.result.value[i])
+		uiResult(ret.result.value[i])
 	}
 	
-	io.print("任务完成")
+	// 关必浏览器
+	uiLog("正在关必浏览器...");
+	var ok, err = cdp.Browser.close()
+	if(!ok){
+		uiLog("关必浏览器，原因:" ++ err);
+		return ; 
+	}
+	
+	uiLog("任务完成");
 }
 
 winform.button.oncommand = function(id,event){
