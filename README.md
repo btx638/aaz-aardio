@@ -1,9 +1,29 @@
-# dp
-[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) lib for aardio
+Name
+====
 
-#### Depend on [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
-#### example
-* 简单模拟点击
+a little lib for usting[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
+
+Table of Contents
+=================
+
+* [Name](#name)
+* [Dependent](#Dependent)
+* [Example](#example)
+    * [简单模拟点击](#简单模拟点击)
+	* [获取节点属性](#获取节点属性)
+	* [用脚本获取节点内容](#用脚本获取节点内容)
+
+Dependent
+=========
+
+* [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
+
+Example
+=======
+
+简单模拟点击
+------------
+
 ````javascript
 import win.ui;
 /*DSG{{*/
@@ -80,7 +100,9 @@ winform.show();
 win.loopMessage();
 ````
 
-* 获取节点属性
+获取节点属性
+------------
+
 ````javascript
 import win.ui;
 /*DSG{{*/
@@ -178,7 +200,9 @@ win.loopMessage();
 return winform;
 ````
 
-* 用脚本获取节点内容
+用脚本获取节点内容
+------------------
+
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/3.gif)
 
 ````javascript
