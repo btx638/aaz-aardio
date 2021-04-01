@@ -1,13 +1,18 @@
 Name
 ====
 
-a little lib for usting [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
+a little library for usting [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
 
 Table of Contents
 =================
 
 * [Name](#name)
 * [Dependent](#Dependent)
+* [Methods](#Methods)
+    * [open](#open)
+    * [connect](#connect)
+    * [waitEvent](#waitEvent)
+    * [run](#run)
 * [Example](#example)
     * [简单模拟点击](#简单模拟点击)
 	* [获取节点属性](#获取节点属性)
@@ -17,6 +22,9 @@ Dependent
 =========
 
 * [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
+
+Methods
+=======
 
 Example
 =======
@@ -99,6 +107,8 @@ winform.button.oncommand = function(id,event){
 winform.show();
 win.loopMessage();
 ````
+
+[Back to TOC](#Example)
 
 获取节点属性
 ------------
@@ -199,6 +209,8 @@ winform.show();
 win.loopMessage();
 return winform;
 ````
+
+[Back to TOC](#Example)
 
 用脚本获取节点内容
 ------------------
@@ -354,3 +366,5 @@ winform.show();
 win.loopMessage();
 return winform;
 ````
+
+[Back to TOC](#table-of-contents)
