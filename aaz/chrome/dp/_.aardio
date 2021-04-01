@@ -151,7 +151,7 @@ class dp{
 		requestId = 0;
 		events = {};
 	}
-	
+		
 	openChrome = function(headless=false, userDataDir="\chrome.remote.userdata", port){
 		port := ..wsock.getFreePort()
 		var cmd = {
@@ -176,7 +176,7 @@ class dp{
 	
 	getWsPath = function(){
 		var url = "http://localhost:" ++ this.chromePort ++ "/json";
-		var html, err, code = whttp.get(url)
+		var html, err, code = whttp.get(url);
 		if(!html){
 			return null, "网络连接有误，获取 webSocketDebuggerUrl 失败，原因：" ++ err; 
 		}
@@ -185,10 +185,17 @@ class dp{
 		if(!#tab){
 			return null, "没有可用 websocket 目标的列表"; 
 		}
-		if(!tab[1].webSocketDebuggerUrl){
+		var pages = {};
+		for(i=1;#tab;1){
+			if(tab[i].type == "page"){
+				..table.push(pages, tab[i])
+			}
+		}
+		
+		if(!pages[1].webSocketDebuggerUrl){
 			return null, "获取 webSocketDebuggerUrl 失败"; 
 		}
-		var uri = ..inet.url.split(tab[1].webSocketDebuggerUrl);
+		var uri = ..inet.url.split(pages[1].webSocketDebuggerUrl);
 		return uri.path; 		
 	}	
 	

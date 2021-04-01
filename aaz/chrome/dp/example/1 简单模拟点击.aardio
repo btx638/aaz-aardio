@@ -51,7 +51,7 @@ var task = function(){
 	// 等待页面加载完成
 	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
     if(!ok){
-        io.print("打开网址失败", err);
+        io.print("等待页面加载完成失败", err);
     	return ; 
     }
 
