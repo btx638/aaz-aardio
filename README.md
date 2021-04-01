@@ -179,6 +179,8 @@ return winform;
 ````
 
 * 用脚本获取节点内容
+![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/3.gif)
+
 ````javascript
 import win.ui;
 /*DSG{{*/
