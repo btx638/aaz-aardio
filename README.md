@@ -1,7 +1,7 @@
 Name
 ====
 
-a little lib for usting[Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
+a little lib for usting [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
 
 Table of Contents
 =================
