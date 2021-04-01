@@ -87,32 +87,28 @@ class dp{
 		}
 		
 		var requests = {};
-		var events = {};
 		var requestId = 0;
+		var eventsWaiting = {};
 		this.timeout = 10000;
-		
 		this.onChromeEvent = function(method, params){};
 		
-		var timer = ..win.timer();
-		timer.onTimer = function(){
+		var checkTimeout = function(tab){
 			if(!this.fiber) return ; 
 			if(fiber.status(this.fiber) != fiber.status.running ) return ; 
 			
-			for(id, tick in requests){
+			for(id, tick in tab){
 				var now = ..time.tick();
 				if((now-tick)>this.timeout){
-					requests[id] = null;
+					tab[id] = null;
     				..fiber.resume(this.fiber, false, "timeout");
 				}
 			}
-			
-			for(name, tick in events){
-				var now = ..time.tick();
-				if((now-tick)>this.timeout){
-					requests[name] = null;
-    				..fiber.resume(this.fiber, false, "timeout");
-				}
-			}
+		}
+		
+		var timer = ..win.timer();
+		timer.onTimer = function(){
+			checkTimeout(requests)
+			checkTimeout(eventsWaiting)
 		}
 		
 		var thCmd = ..thread.command();
@@ -124,11 +120,11 @@ class dp{
 		}
 		
 		thCmd.onChromeEvent = function(method, params){	
-			this.onChromeEvent(method, params)		
-			if(events[method]){
+			if(eventsWaiting[method]){
 				..fiber.resume(this.fiber, params)
-				events[method] = null;
+				eventsWaiting[method] = null;
 			}
+			this.onChromeEvent(method, params)	
 		}
 		
 		thCmd.onChromeConnect = function(){
@@ -149,7 +145,7 @@ class dp{
 	init = function(){
 		requests = {};
 		requestId = 0;
-		events = {};
+		eventsWaiting = {};
 	}
 		
 	openChrome = function(headless=false, userDataDir="\chrome.remote.userdata", port){
@@ -239,7 +235,7 @@ class dp{
 	}
 	
 	waitEvent = function(name){
-		events[name] = {
+		eventsWaiting[name] = {
 			tick = ..time.tick();
 		}
 		return ..fiber.yield(); 
