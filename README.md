@@ -9,7 +9,7 @@ Table of Contents
 * [Name](#name)
 * [Dependent](#Dependent)
 * [Attributes](#Attributes)
-	*[timeout](#timeout)
+	* [timeout](#timeout)
 * [Methods](#Methods)
     * [open](#open)
     * [connect](#connect)
