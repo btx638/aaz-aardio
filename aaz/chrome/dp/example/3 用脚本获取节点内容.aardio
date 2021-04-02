@@ -1,9 +1,13 @@
 import win.ui;
 /*DSG{{*/
-var winform = win.form(text="aardio form";right=629;bottom=362)
+var winform = win.form(text="aardio form";right=663;bottom=383)
 winform.add(
-button={cls="button";text="运行";left=528;top=290;right=617;bottom=326;z=1};
-lvResult={cls="listview";left=9;top=6;right=621;bottom=278;edge=1;fullRow=1;z=2}
+button={cls="button";text="运行";left=552;top=320;right=650;bottom=348;z=1};
+edSelector={cls="edit";text=".home-box-list .post-list .item-content h2 a";left=72;top=320;right=416;bottom=348;edge=1;z=6};
+edUrl={cls="edit";text="https://www.htmlayout.cn/";left=72;top=280;right=416;bottom=308;edge=1;z=4};
+lvResult={cls="listview";left=9;top=7;right=652;bottom=271;edge=1;fullRow=1;z=2};
+static={cls="static";text="url";left=11;top=286;right=64;bottom=310;align="right";transparent=1;z=3};
+static2={cls="static";text="selector ";left=8;top=320;right=63;bottom=344;align="right";transparent=1;z=5}
 )
 /*}}*/
 
@@ -57,6 +61,8 @@ var closeChrome = function(){
 var doFail = function(name, err){
     uiLogFail(name, err);
 	closeChrome();
+	
+	return false; 
 }
 
 var task = function(url, selector){
@@ -183,10 +189,11 @@ var task = function(url, selector){
 	}
 	
 	uiLog("任务完成");
+	return true; 
 }
 
 winform.button.oncommand = function(id,event){
-	cdp.run(task, "https://www.htmlayout.cn/", ".home-box-list .post-list .item-content h2 a")
+	cdp.run(task, winform.edUrl.text, winform.edSelector.text);
 }
 
 winform.show();
