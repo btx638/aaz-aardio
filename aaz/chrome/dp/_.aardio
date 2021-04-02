@@ -142,9 +142,7 @@ class dp{
 	}
 	
 	close = function(){
-		if(this.chromePid){
-			..process.kill(this.chromePid)
-		}
+		this.closeChrome();
 		component.stop();
 		listener.destroy();	
 	}
@@ -160,7 +158,7 @@ class dp{
 		var cmd = {
 			"--remote-debugging-port=" ++ port;
 			"--user-data-dir=" ++ ..io.createDir(userDataDir);
-		//	"--disable-gpu";
+			"--disable-gpu";
 		}
 		if(headless){
 			..table.push(cmd, "--headless");
@@ -176,18 +174,25 @@ class dp{
 		
 		return true; 
 	}
-	
-	getWsPath = function(){
-		var url = "http://localhost:" ++ this.chromePort ++ "/json";
+
+	getInfo = function(host, port, path){
+		var url = "http://" ++ host ++ ":" ++ port ++ path;
 		var html, err, code = whttp.get(url);
 		if(!html){
+			return null, err, code; 
+		}
+		return ..web.json.parse(html);; 
+	}
+	
+	getWsPath = function(host, port){
+		var tab, err, code = this.getInfo(host, port, "/json")
+		if(!tab){
 			return null, "网络连接有误，获取 webSocketDebuggerUrl 失败，原因：" ++ err; 
 		}
-		
-		var tab = ..web.json.parse(html);
 		if(!#tab){
 			return null, "没有可用 websocket 目标的列表"; 
 		}
+		
 		var pages = {};
 		for(i=1;#tab;1){
 			if(tab[i].type == "page"){
@@ -200,27 +205,45 @@ class dp{
 		}
 		var uri = ..inet.url.split(pages[1].webSocketDebuggerUrl);
 		return uri.path; 		
-	}	
-	
-	open = function(headless, userDataDir, port){
+	}
+		
+	closeChrome = function(){
 		if(this.chromePid){
 			..process.kill(this.chromePid)
 		}
+	}
+	
+	open = function(headless, userDataDir, port){
+		this.closeChrome();
+		
 		var ok, err = this.openChrome(headless, userDataDir, port);
 		if(!ok){
 			return false, "启动 chrome 失败，原因：" ++ err; 
 		}
 		
-		var wsPath, err = this.getWsPath();
+		var wsPath, err = this.getWsPath("localhost", this.chromePort);
 		if(!wsPath){
 			return false, err; 
 		}
+		this.chromeHost = "localhost";
 		..thread.set("wsPath", wsPath);
 		return true;
 	}
 	
+	newTab = function(){
+		
+	}
+	
+	activateTab = function(targetId){
+		
+	}
+	
+	closeTab = function(targetId){
+		
+	}
+	
 	connect = function(){
-		var ok, err = component.start("localhost", this.chromePort);
+		var ok, err = component.start(this.chromeHost, this.chromePort);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
