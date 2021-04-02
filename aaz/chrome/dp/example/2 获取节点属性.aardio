@@ -10,7 +10,11 @@ io.open()
 
 import aaz.chrome.dp;
 
-var cdp = aaz.chrome.dp()
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
 
 var task = function(){
     io.print("完成开始")

@@ -7,6 +7,7 @@ lvResult={cls="listview";left=9;top=6;right=621;bottom=278;edge=1;fullRow=1;z=2}
 )
 /*}}*/
 
+import console;
 import win.ui.statusbar;
 import aaz.chrome.dp;
 
@@ -37,7 +38,6 @@ var uiLogFail = function(name, err){
 	uiLog(str);
 }
 
-
 var uiResult = function(str){
 	winform.lvResult.addItem({
 		tostring(winform.lvResult.count+1);
@@ -59,12 +59,11 @@ var doFail = function(name, err){
 	closeChrome();
 }
 
-
-var task = function(){
+var task = function(url, selector){
     uiInit();
  	
  	uiLogRunning("打开浏览器");
-	var ok, err = cdp.open(true); // 打开浏览器并开启 headless 模式，即不显示界面
+	var ok, err = cdp.open(true);
     if(!ok){
         doFail("打开浏览器", err);
     	return ; 
@@ -85,17 +84,17 @@ var task = function(){
     }
 	
 	// 打开网址
-	uiLogRunning("打开网址 https://www.htmlayout.cn/");	
+	uiLogRunning("打开网址");	
 	var ok, err = cdp.Page.navigate(
-		url = "https://www.htmlayout.cn/";
+		url = url;
 	)
     if(!ok){
-        doFail("打开网址 https://www.htmlayout.cn/", err);
+        doFail("打开网址", err);
     	return ; 
     }
 	
 	uiLogRunning("等待页面加载完成");
-	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+	var ok, err = cdp.waitEvent("Page.loadEventFired");
     if(!ok){
         doFail("等待页面加载完成", err);
     	return ; 
@@ -109,12 +108,12 @@ var task = function(){
 	}
 	
 	uiLogRunning("编译脚本");
-	var script, err = cdp.Runtime.compileScript(
-		sourceURL = "https://www.htmlayout.cn/";
+	var ret, err = cdp.Runtime.compileScript(
+		sourceURL = url;
 		persistScript = true;
 		expression = /**
-		 var getTitles = function(){
-       		var doms = document.querySelectorAll(".home-box-list .post-list .item-content h2 a");
+		 var getInnerText = function(selector){
+       		var doms = document.querySelectorAll(selector);
        		var ret = new Array();
        		for(var i=0;i<doms.length;i++){
            		ret.push(doms[i].innerText);
@@ -123,14 +122,27 @@ var task = function(){
 		 }
 		**/
 	)
-	if(!script){
+
+	if(!ret){
         doFail("编译脚本", err);
     	return ; 
 	}
+	// 检查编译的结果
+	// 发现错误
+	if(ret.exceptionDetails){
+        doFail(
+        	"编译脚本", 
+        	" 行号：" ++ ret.exceptionDetails.lineNumber ++
+        	" 列号：" ++ ret.exceptionDetails.columnNumber ++ 
+        	" 内容：" ++ ret.exceptionDetails.exception.description
+        );
+    	return ; 
+	}
+	
 	
 	uiLogRunning("运行脚本");
 	var ret, err = cdp.Runtime.runScript(
-		scriptId = 	script.scriptId;
+		scriptId = 	ret.scriptId;
 		returnByValue = true;
 	)
 	if(!ret){
@@ -140,17 +152,27 @@ var task = function(){
 	
 	uiLogRunning("对全局对象的表达式求值");
 	var ret, err = cdp.Runtime.evaluate(
-		expression = "getTitles()";
+		expression = `getInnerText("` ++ selector ++ `")`;
 		returnByValue = true;
 	)
 	if(!ret){
 		doFail("对全局对象的表达式求值", err);
 		return ; 
 	}
+	var result = ret.result;
+	
+	// 检测结果的类型
+	// 看看有没有错误
+	select(result.subtype) {
+		case "error" {
+			doFail("对全局对象的表达式求值", result.description);
+			return ; 
+		}
+	}
 	
 	// 读取结果
-	for(i=1;#ret.result.value;1){
-		uiResult(ret.result.value[i]);
+	for(i=1;#result.value;1){
+		uiResult(result.value[i]);
 	}
 	
 	uiLogRunning("关闭浏览器");
@@ -164,7 +186,7 @@ var task = function(){
 }
 
 winform.button.oncommand = function(id,event){
-	cdp.run(task)
+	cdp.run(task, "https://www.htmlayout.cn/", ".home-box-list .post-list .item-content h2 a")
 }
 
 winform.show();

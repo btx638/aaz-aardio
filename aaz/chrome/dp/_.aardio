@@ -227,13 +227,13 @@ class dp{
 		return ..fiber.yield(); 
 	}
 	
-	run = function(func){
+	run = function(func, ...){
 		this.init();
 		var fib, err = ..fiber.create(func); 
 		if(!fib){
 			return null, "创建协程失败，原因：" ++  err; 
 		}
-		var ok, err = ..fiber.resume(fib);	
+		var ok, err = ..fiber.resume(fib, ...);	
 		if(!ok){
 			return false, "启动协程失败，原因：" ++  err; 
 		}

@@ -8,7 +8,11 @@ button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
 
 io.open()
 
-import aaz.chrome.dp;
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
 
 var cdp = aaz.chrome.dp();
 // 接收事件
