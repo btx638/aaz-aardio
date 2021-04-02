@@ -8,12 +8,15 @@ Table of Contents
 
 * [Name](#name)
 * [Dependent](#Dependent)
+* [Attributes](#Attributes)
+	*[timeout](#timeout)
 * [Methods](#Methods)
     * [open](#open)
     * [connect](#connect)
     * [waitEvent](#waitEvent)
     * [run](#run)
-* [Example](#example)
+* [Properties](#Properties)
+* [Examples](#Examples)
 	* [用脚本获取节点内容](#用脚本获取节点内容)
 
 Dependent
@@ -21,10 +24,16 @@ Dependent
 
 * [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
 
+Attributes
+==========
+
 Methods
 =======
 
-Example
+Properties
+==========
+
+Examples
 =======
 
 用脚本获取节点内容
