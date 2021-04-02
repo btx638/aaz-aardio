@@ -17,7 +17,7 @@ Table of Contents
     * [run](#run)
 * [Properties](#Properties)
 * [Examples](#Examples)
-	* [用脚本获取节点内容](#用脚本获取节点内容)
+	* [获取节点内容](#获取节点内容)
 
 Dependent
 =========
@@ -36,8 +36,8 @@ Properties
 Examples
 =======
 
-用脚本获取节点内容
-------------------
+获取节点内容
+------------
 
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/3.gif)
 
@@ -55,7 +55,6 @@ static2={cls="static";text="selector ";left=8;top=320;right=63;bottom=344;align=
 )
 /*}}*/
 
-import console;
 import win.ui.statusbar;
 import aaz.chrome.dp;
 
@@ -64,10 +63,11 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
+cdp.timeout = 9000;
 
 var statusbar = win.ui.statusbar(winform);
 statusbar.addItem("运行状态：", 70);
-statusbar.addItem("", -1);
+statusbar.addItem("就绪", -1);
 
 winform.lvResult.insertColumn("序号",50);
 winform.lvResult.insertColumn("标题",-1);
@@ -127,8 +127,6 @@ var doFail = function(name, err){
 	onTaskEnd();
 	return false; 
 }
-
-
 
 var task = function(url, selector){
     onTaskBegin();

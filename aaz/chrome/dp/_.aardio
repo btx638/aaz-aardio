@@ -22,7 +22,7 @@ class dp{
 				return null, "系统未安装chrome";
 			}
 		}
-		this.chromePath = chromePath;
+		
 
 		var whttp = ..inet.whttp();
 		whttp.setTimeouts(3000, 3000, 3000);
@@ -85,40 +85,47 @@ class dp{
 			thread.command.post("onChromeClose");
 		}
 		
+		this.timeout = 10000;
+		
 		var requests = {};
 		var requestId = 0;
 		var eventsWaiting = {};
-		this.timeout = 10000;
+		var currentFiber;
+		var chromePid;
+		var chromeHost;
+		var chromePort;
 		
 		var checkTimeout = function(tab){
+			var now = ..time.tick();
 			for(id, info in tab){
-				var now = ..time.tick();
 				if((now-info.tick)>this.timeout){
-    				..fiber.resume(this.fiber, false, "timeout");
+    				..fiber.resume(currentFiber, false, "timeout");
     				tab[id] = null;
 				}
 			}
 		}
 		
-		var timer = ..win.timer();
+		var timer = ..win.timer(null, 300);
 		timer.onTimer = function(){
-			if(!this.fiber) return ; 
-			if(fiber.status(this.fiber) != fiber.status.running) return ; 
+			if(!currentFiber) return ; 
+			if(..fiber.status(currentFiber) != ..fiber.status.suspended) return ;
+			
 			checkTimeout(requests)
 			checkTimeout(eventsWaiting)
 		}
+		timer.enable()
 		
 		var thCmd = ..thread.command();
 		thCmd.onChromeResponse = function(id, result, err){
     		if(requests[id]){
-    			..fiber.resume(this.fiber, result, err);
+    			..fiber.resume(currentFiber, result, err);
     			requests[id] = null;
     		}	
 		}
 		
 		thCmd.onChromeEvent = function(method, params){	
 			if(eventsWaiting[method]){
-				..fiber.resume(this.fiber, params)
+				..fiber.resume(currentFiber, params)
 				eventsWaiting[method] = null;
 			}
 			
@@ -128,20 +135,20 @@ class dp{
 			}
 			
 			if(method == "Inspector.detached"){
-				this.chromePid = null;
-				this.fiber = null;
+				chromePid = null;
+				currentFiber = null;
 			}	
 		}
 		
 		thCmd.onChromeConnect = function(){
 			if(eventsWaiting["connectChrome"]){
-				..fiber.resume(this.fiber, true);
+				..fiber.resume(currentFiber, true);
 				eventsWaiting["connectChrome"] = null
 			}
 		}
 		
 		thCmd.onChromeOpen = function(pid, err){
-			..fiber.resume(this.fiber, pid, err);
+			..fiber.resume(currentFiber, pid, err);
 		}
 		
 		..table.gc(this, "close");
@@ -190,14 +197,14 @@ class dp{
 		}
 		
 		cmd = ..string.join(cmd, " ");
-		var pid, err = ..process.execute(this.chromePath, cmd);
-		//var pid, err = this.executeExeByThread(this.chromePath, cmd);
+		var pid, err = ..process.execute(chromePath, cmd);
+		//var pid, err = this.executeExeByThread(chromePath, cmd);
 		if(!pid){
 			return null, "启动 chrome 失败，原因：" ++ err; 
 		}
-		this.chromePid = pid;
-		this.chromeHost = "localhost";
-		this.chromePort = port;
+		chromePid = pid;
+		chromeHost = "localhost";
+		chromePort = port;
 		
 		return true; 
 	}
@@ -245,8 +252,9 @@ class dp{
 	}
 		
 	closeChrome = function(){
-		if(this.chromePid){
-			..process.kill(this.chromePid)
+		if(chromePid){
+			..process.kill(chromePid);
+			chromePid = null;
 		}
 	}
 	
@@ -258,7 +266,7 @@ class dp{
 			return false, "启动 chrome 失败，原因：" ++ err; 
 		}
 		
-		var wsPath, err = this.getWsDebugPath(this.chromeHost, this.chromePort);
+		var wsPath, err = this.getWsDebugPath(chromeHost, chromePort);
 		if(!wsPath){
 			return false, err; 
 		}
@@ -279,7 +287,7 @@ class dp{
 	}
 		
 	connect = function(){
-		var ok, err = component.start(this.chromeHost, this.chromePort);
+		var ok, err = component.start(chromeHost, chromePort);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
@@ -299,7 +307,7 @@ class dp{
 		if(!ok){
 			return false, "启动 fiber 失败，原因：" ++  err; 
 		}
-		this.fiber = fib;
+		currentFiber = fib;
 		return true; 
 	}
 	
@@ -357,7 +365,8 @@ namespace dp{
 
 /**intellisense(aaz.chrome)
 dp = 谷歌开发者工具协议库
-dp(.(谷歌浏览器exe路径 可选) = !cdp.
+dp(.(谷歌浏览器exe路径 可选) = 创建谷歌开发者协议辅助对象
+dp() = !cdp.
 end intellisense**/
 
 /**intellisense(!cdp)
