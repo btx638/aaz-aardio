@@ -27,6 +27,16 @@ class dp{
 		var whttp = ..inet.whttp();
 		whttp.setTimeouts(3000, 3000, 3000);
 		
+		this.timeout = 10000;
+		
+		var requests = {};
+		var requestId = 0;
+		var eventsWaiting = {};
+		var currentFiber;
+		var chromePid;
+		var chromeHost;
+		var chromePort;
+		
 		var listener = ..aaz.libhpsocket.listener.httpClient();
 		var component = ..aaz.libhpsocket.component.httpClient(listener);
 			
@@ -84,17 +94,7 @@ class dp{
 			aaz.libhpsocket.helper.httpClient.reallocString(component, 0);
 			thread.command.post("onChromeClose");
 		}
-		
-		this.timeout = 10000;
-		
-		var requests = {};
-		var requestId = 0;
-		var eventsWaiting = {};
-		var currentFiber;
-		var chromePid;
-		var chromeHost;
-		var chromePort;
-		
+			
 		var checkTimeout = function(tab){
 			var now = ..time.tick();
 			for(id, info in tab){
@@ -364,16 +364,15 @@ namespace dp{
 // https://chromedevtools.github.io/devtools-protocol/
 
 /**intellisense(aaz.chrome)
-dp = 谷歌开发者工具协议库
-dp(.(谷歌浏览器exe路径 可选) = 创建谷歌开发者协议辅助对象
+dp = 谷歌开发者工具协议辅助库
+dp(.(谷歌浏览器exe路径 可选) = 创建谷歌开发者工具协议辅助对象
 dp() = !cdp.
 end intellisense**/
 
 /**intellisense(!cdp)
-timeout = 设置请求超时，单位毫秒，默认 10000
+timeout = 设置单次请求超时，单位毫秒，默认 10000
 open(.(开启无头模式, 临时目录, 端口) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
 connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
 run(.(任务函数, 不定参数) = 运行任务函数
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
 end intellisense**/
-

@@ -7,7 +7,7 @@ Table of Contents
 =================
 
 * [Name](#name)
-* [Dependent](#Dependent)
+* [Dependents](#Dependents)
 * [Attributes](#Attributes)
 	* [timeout](#timeout)
 * [Methods](#Methods)
@@ -19,8 +19,8 @@ Table of Contents
 * [Examples](#Examples)
 	* [获取节点内容](#获取节点内容)
 
-Dependent
-=========
+Dependents
+==========
 
 * [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
 
@@ -76,12 +76,15 @@ var uiLog = function(str){
 	statusbar.setText(str, 2);
 }
 
+var currentRunningName;
 var uiLogRunning = function(name){
     var str = string.format("正在%s...", name);
+    currentRunningName = name;
 	uiLog(str);	
 }
 
 var uiLogFail = function(name, err){
+    name := currentRunningName;
     var str = string.format("%s失败，原因：%s", name, err);
 	uiLog(str);
 }
@@ -104,6 +107,7 @@ var closeChrome = function(){
 
 var onTaskBegin = function(){
 	winform.button.disabled = true
+	currentRunningName = null;
 	uiInit();
 }
 
@@ -135,21 +139,21 @@ var task = function(url, selector){
  	uiLogRunning("打开浏览器");
 	var ok, err = cdp.open(true);
     if(!ok){
-        doFail("打开浏览器", err);
+        doFail( null, err);
     	return ; 
     }
 	
 	uiLogRunning("连接浏览器");
     var ok, err = cdp.connect();
     if(!ok){
-        doFail("连接浏览器", err);
+        doFail( null, err);
     	return ; 
     }
     
 	uiLogRunning("订阅 Page 事件");	
 	var ok, err = cdp.Page.enable();
     if(!ok){
-        doFail("订阅 Page 事件", err);
+        doFail( null, err);
     	return ; 
     }
 	
@@ -159,21 +163,21 @@ var task = function(url, selector){
 		url = url;
 	)
     if(!ok){
-        doFail("打开网址", err);
+        doFail( null, err);
     	return ; 
     }
 	
 	uiLogRunning("等待页面加载完成");
 	var ok, err = cdp.waitEvent("Page.loadEventFired");
     if(!ok){
-        doFail("等待页面加载完成", err);
+        doFail( null, err);
     	return ; 
     }
  	
 	uiLogRunning("开启 runtime");
 	var ok, err = cdp.Runtime.enable()
 	if(!ok){
-		doFail("开启 runtime", err);
+		doFail( null, err);
 		return ; 
 	}
 	
@@ -194,14 +198,14 @@ var task = function(url, selector){
 	)
 
 	if(!ret){
-        doFail("编译脚本", err);
+        doFail( null, err);
     	return ; 
 	}
 	// 检查编译的结果
 	// 发现错误
 	if(ret.exceptionDetails){
         doFail(
-        	"编译脚本", 
+        	null, 
         	" 行号：" ++ ret.exceptionDetails.lineNumber ++
         	" 列号：" ++ ret.exceptionDetails.columnNumber ++ 
         	" 内容：" ++ ret.exceptionDetails.exception.description
@@ -216,7 +220,7 @@ var task = function(url, selector){
 		returnByValue = true;
 	)
 	if(!ret){
-		doFail("运行脚本", err);
+		doFail(null, err);
 		return ; 
 	}
 	
@@ -226,7 +230,7 @@ var task = function(url, selector){
 		returnByValue = true;
 	)
 	if(!ret){
-		doFail("对全局对象的表达式求值", err);
+		doFail(null, err);
 		return ; 
 	}
 	var result = ret.result;
@@ -235,7 +239,7 @@ var task = function(url, selector){
 	// 看看有没有错误
 	select(result.subtype) {
 		case "error" {
-			doFail("对全局对象的表达式求值", result.description);
+			doFail(null, result.description);
 			return ; 
 		}
 	}
@@ -243,7 +247,7 @@ var task = function(url, selector){
 	uiLogRunning("关闭浏览器");
 	var ok, err = closeChrome();
 	if(!ok){
-		doFail("关闭浏览器", err);
+		doFail(null, err);
 		return ; 
 	}
 
