@@ -65,6 +65,10 @@ var onTaskBegin = function(){
 
 var onTaskEnd = function(result, duration){
 	winform.button.disabled = false
+	
+	if(!duration){
+		return ; 
+	}
 	uiLog("任务完成，用时：" ++ duration ++ "毫秒")
 	
 	// 读取结果
