@@ -10,20 +10,19 @@ import aaz.libhpsocket.component.httpClient;
 
 namespace aaz.chrome;
 class dp{
-	ctor(chromeExePath){	
-		if(chromeExePath){
-			if(!..io.exist(chromeExePath)){
-				error(chromeExePath ++ " 文件不存在",2);
+	ctor(chromePath){	
+		if(chromePath){
+			if(!..io.exist(chromePath)){
+				error(chromePath ++ " 文件不存在",2);
 			}
-			this.chromePath = chromeExePath;
 		}
 		else {
-			var chromePath = ..chrome.path();
+			chromePath = ..chrome.path();
 			if(!chromePath){
 				return null, "系统未安装chrome";
 			}
-			this.chromePath = chromePath;
 		}
+		this.chromePath = chromePath;
 
 		var whttp = ..inet.whttp();
 		whttp.setTimeouts(3000, 3000, 3000);
@@ -62,9 +61,9 @@ class dp{
 		
 		listener.onWsMessageComplete = function(component, connId){
 			var json = aaz.libhpsocket.helper.httpClient.getString(component);
-			if( json ){
+			if(json){
 				var t = web.json.tryParse(json)
-				if( type(t) == type.table ){
+				if(type(t) == type.table){
 					// 请求回复
 					if(t.id){
 						if(t.error){
@@ -83,7 +82,7 @@ class dp{
 		
 		listener.onClose = function(component,connId,enOperation,errCode){
 			aaz.libhpsocket.helper.httpClient.reallocString(component, 0);
-			thread.command.post( "onChromeClose")
+			thread.command.post("onChromeClose");
 		}
 		
 		var requests = {};
@@ -92,20 +91,19 @@ class dp{
 		this.timeout = 10000;
 		
 		var checkTimeout = function(tab){
-			if(!this.fiber) return ; 
-			if(fiber.status(this.fiber) != fiber.status.running ) return ; 
-			
-			for(id, tick in tab){
+			for(id, info in tab){
 				var now = ..time.tick();
-				if((now-tick)>this.timeout){
-					tab[id] = null;
+				if((now-info.tick)>this.timeout){
     				..fiber.resume(this.fiber, false, "timeout");
+    				tab[id] = null;
 				}
 			}
 		}
 		
 		var timer = ..win.timer();
 		timer.onTimer = function(){
+			if(!this.fiber) return ; 
+			if(fiber.status(this.fiber) != fiber.status.running) return ; 
 			checkTimeout(requests)
 			checkTimeout(eventsWaiting)
 		}
@@ -129,20 +127,29 @@ class dp{
 				this.onChromeEvent(method, params)
 			}
 			
-			if( method == "Inspector.detached"){
+			if(method == "Inspector.detached"){
 				this.chromePid = null;
+				this.fiber = null;
 			}	
 		}
 		
 		thCmd.onChromeConnect = function(){
-			..fiber.resume(this.fiber, true)
+			if(eventsWaiting["connectChrome"]){
+				..fiber.resume(this.fiber, true);
+				eventsWaiting["connectChrome"] = null
+			}
 		}
-
+		
+		thCmd.onChromeOpen = function(pid, err){
+			..fiber.resume(this.fiber, pid, err);
+		}
+		
 		..table.gc(this, "close");
 	}
 	
 	close = function(){
 		this.closeChrome();
+		timer.disable();
 		component.stop();
 		listener.destroy();	
 	}
@@ -151,6 +158,24 @@ class dp{
 		requests = {};
 		requestId = 0;
 		eventsWaiting = {};
+	}
+	
+	executeExeByThread = function(path, cmd){
+		..thread.invoke(
+			function(path, cmd){
+				import process;
+				import thread.command;
+
+				var pid, err = process.execute(path, cmd)
+				thread.command.post("onChromeOpen", pid, err)
+			},
+			path,
+			cmd);
+			
+		eventsWaiting["connectChrome"] = {
+			tick = ..time.tick();
+		}
+		return ..fiber.yield(); 
 	}
 		
 	openChrome = function(headless=false, userDataDir="\chrome.remote.userdata", port){
@@ -166,10 +191,12 @@ class dp{
 		
 		cmd = ..string.join(cmd, " ");
 		var pid, err = ..process.execute(this.chromePath, cmd);
+		//var pid, err = this.executeExeByThread(this.chromePath, cmd);
 		if(!pid){
 			return null, "启动 chrome 失败，原因：" ++ err; 
 		}
 		this.chromePid = pid;
+		this.chromeHost = "localhost";
 		this.chromePort = port;
 		
 		return true; 
@@ -177,15 +204,25 @@ class dp{
 
 	getInfo = function(host, port, path){
 		var url = "http://" ++ host ++ ":" ++ port ++ path;
-		var html, err, code = whttp.get(url);
+
+		var html, err, code = ..win.invoke(
+			function(url){
+				import inet.whttp;
+				
+				var whttp = inet.whttp();
+				return whttp.get(url);
+			},
+			url);
+			
+	//	var html, err, code = whttp.get(url);	
 		if(!html){
 			return null, err, code; 
 		}
-		return ..web.json.parse(html);; 
+		return ..web.json.parse(html);
 	}
 	
-	getWsPath = function(host, port){
-		var tab, err, code = this.getInfo(host, port, "/json")
+	getWsDebugPath = function(host, port){
+		var tab, err, code = this.getInfo(host, port, "/json");
 		if(!tab){
 			return null, "网络连接有误，获取 webSocketDebuggerUrl 失败，原因：" ++ err; 
 		}
@@ -196,11 +233,11 @@ class dp{
 		var pages = {};
 		for(i=1;#tab;1){
 			if(tab[i].type == "page"){
-				..table.push(pages, tab[i])
+				..table.push(pages, tab[i]);
 			}
 		}
 		
-		if(!pages[1].webSocketDebuggerUrl){
+		if(!#pages){
 			return null, "获取 webSocketDebuggerUrl 失败"; 
 		}
 		var uri = ..inet.url.split(pages[1].webSocketDebuggerUrl);
@@ -221,11 +258,10 @@ class dp{
 			return false, "启动 chrome 失败，原因：" ++ err; 
 		}
 		
-		var wsPath, err = this.getWsPath("localhost", this.chromePort);
+		var wsPath, err = this.getWsDebugPath(this.chromeHost, this.chromePort);
 		if(!wsPath){
 			return false, err; 
 		}
-		this.chromeHost = "localhost";
 		..thread.set("wsPath", wsPath);
 		return true;
 	}
@@ -241,11 +277,14 @@ class dp{
 	closeTab = function(targetId){
 		
 	}
-	
+		
 	connect = function(){
 		var ok, err = component.start(this.chromeHost, this.chromePort);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
+		}
+		eventsWaiting["connectChrome"] = {
+			tick = ..time.tick();
 		}
 		return ..fiber.yield(); 
 	}
@@ -254,11 +293,11 @@ class dp{
 		this.init();
 		var fib, err = ..fiber.create(func); 
 		if(!fib){
-			return null, "创建协程失败，原因：" ++  err; 
+			return null, "创建 fiber 失败，原因：" ++  err; 
 		}
 		var ok, err = ..fiber.resume(fib, ...);	
 		if(!ok){
-			return false, "启动协程失败，原因：" ++  err; 
+			return false, "启动 fiber 失败，原因：" ++  err; 
 		}
 		this.fiber = fib;
 		return true; 
@@ -273,12 +312,12 @@ class dp{
 	
 	xcall = function(method, params){
 		requestId++;
-		
 		var json = ..web.json.stringify(
 			id = requestId;
 			method = method;
 			params = params;
 		);
+		
 		var ok = component.sendWsMessage(json);
 		if(!ok){
 			return false, "发送请求数据失败"; 
@@ -295,8 +334,8 @@ class dp{
 namespace dp{
     _meta = {
     	_get = function(k){
-    		var t = type(k)
-    		if( t == type.string ){
+    		var tt = type(k)
+    		if( tt == type.string ){
     			if(owner[["method"]]){
     				k = owner[["method"]] ++ "." ++ k;  
     			}
@@ -325,7 +364,7 @@ end intellisense**/
 timeout = 设置请求超时，单位毫秒，默认 10000
 open(.(开启无头模式, 临时目录, 端口) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
 connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
-run(任务函数) = 运行任务函数
+run(.(任务函数, 不定参数) = 运行任务函数
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
 end intellisense**/
 

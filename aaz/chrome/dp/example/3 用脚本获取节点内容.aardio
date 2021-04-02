@@ -3,8 +3,8 @@ import win.ui;
 var winform = win.form(text="aardio form";right=663;bottom=383)
 winform.add(
 button={cls="button";text="运行";left=552;top=320;right=650;bottom=348;z=1};
-edSelector={cls="edit";text=".home-box-list .post-list .item-content h2 a";left=72;top=320;right=416;bottom=348;edge=1;z=6};
-edUrl={cls="edit";text="https://www.htmlayout.cn/";left=72;top=280;right=416;bottom=308;edge=1;z=4};
+edSelector={cls="edit";text=".items-area .item dl dt a";left=72;top=320;right=416;bottom=348;edge=1;z=6};
+edUrl={cls="edit";text="https://www.cnbeta.com/";left=72;top=280;right=416;bottom=308;edge=1;z=4};
 lvResult={cls="listview";left=9;top=7;right=652;bottom=271;edge=1;fullRow=1;z=2};
 static={cls="static";text="url";left=11;top=286;right=64;bottom=310;align="right";transparent=1;z=3};
 static2={cls="static";text="selector ";left=8;top=320;right=63;bottom=344;align="right";transparent=1;z=5}
@@ -46,7 +46,7 @@ var uiResult = function(str){
 	winform.lvResult.addItem({
 		tostring(winform.lvResult.count+1);
 		str
-	})
+	});
 }
 
 var uiInit = function(){
@@ -58,16 +58,34 @@ var closeChrome = function(){
 	return cdp.Browser.close(); 
 }
 
+var onTaskBegin = function(){
+	winform.button.disabled = true
+	uiInit();
+}
+
+var onTaskEnd = function(result, duration){
+	winform.button.disabled = false
+	uiLog("任务完成，用时：" ++ duration ++ "毫秒")
+	
+	// 读取结果
+	for(i=1;#result;1){
+		uiResult(result[i]);
+	}
+}
+
 var doFail = function(name, err){
     uiLogFail(name, err);
 	closeChrome();
-	
+	onTaskEnd();
 	return false; 
 }
 
+
+
 var task = function(url, selector){
-    uiInit();
- 	
+    onTaskBegin();
+    var tick = time.tick()
+
  	uiLogRunning("打开浏览器");
 	var ok, err = cdp.open(true);
     if(!ok){
@@ -175,20 +193,15 @@ var task = function(url, selector){
 			return ; 
 		}
 	}
-	
-	// 读取结果
-	for(i=1;#result.value;1){
-		uiResult(result.value[i]);
-	}
-	
+
 	uiLogRunning("关闭浏览器");
 	var ok, err = closeChrome();
 	if(!ok){
 		doFail("关闭浏览器", err);
 		return ; 
 	}
-	
-	uiLog("任务完成");
+
+	onTaskEnd(result.value, time.tick() - tick);
 	return true; 
 }
 
