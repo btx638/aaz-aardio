@@ -10,24 +10,12 @@ import aaz.libhpsocket.component.httpClient;
 
 namespace aaz.chrome;
 class dp{
-	ctor(chromePath){	
-		if(chromePath){
-			if(!..io.exist(chromePath)){
-				error(chromePath ++ " 文件不存在",2);
-			}
-		}
-		else {
-			chromePath = ..chrome.path();
-			if(!chromePath){
-				return null, "找不到 chrome 浏览器";
-			}
-		}
-
+	ctor(){	
 		this.timeout = 10000;
+		this.lastTaskDuration = 0;
 		this.chromeHost = null; 
 		this.chromePort = null;
-		this.lastTaskDuration = 0;
-		
+
 		var requests = {};
 		var requestId = 0;
 		var currentFiber;
@@ -64,39 +52,40 @@ class dp{
 		}
 		timer.enable()
 			
-		var listener = ..aaz.libhpsocket.listener.httpClient();
-		var component = ..aaz.libhpsocket.component.httpClient(listener);
+		var httpClientListener = ..aaz.libhpsocket.listener.httpClient();
+		var httpClientComponent = ..aaz.libhpsocket.component.httpClient(httpClientListener);
 			
-		listener.onThreadCreated = function(){
+		httpClientListener.onThreadCreated = function(){
 			import web.json;
 			import thread.command;
 			import aaz.libhpsocket.helper.httpClient;
 		}
 		
-		listener.onHandShake = function(component, connId){
+		httpClientListener.onHandShake = function(component, connId){
 			var wsPath = ..thread.get("wsPath")
 			aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(component, wsPath);
 		}
 		
-		listener.onUpgrade = function(component, connId, upgradeType){
+		httpClientListener.onUpgrade = function(component, connId, upgradeType){
 			if(1!= upgradeType){
 				return 2; 
 			}
 			if(!aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component)){
+				thread.command.post("onChromeConnect", false);
 				return 2; 
 			}
-			thread.command.post("onChromeConnect");
+			thread.command.post("onChromeConnect", true);
 		}
 		
-		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+		httpClientListener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
 			aaz.libhpsocket.helper.httpClient.reallocString(component, bodyLen);
 		}
 		
-		listener.onWsMessageBody = function(component, connId, pData, len){
+		httpClientListener.onWsMessageBody = function(component, connId, pData, len){
 			aaz.libhpsocket.helper.httpClient.appendString(component, pData, len);	
 		}
 		
-		listener.onWsMessageComplete = function(component, connId){
+		httpClientListener.onWsMessageComplete = function(component, connId){
 			var json = aaz.libhpsocket.helper.httpClient.getString(component);
 			if(json){
 				var t = web.json.tryParse(json)
@@ -117,7 +106,7 @@ class dp{
 			}
 		}
 		
-		listener.onClose = function(component,connId,enOperation,errCode){
+		httpClientListener.onClose = function(component,connId,enOperation,errCode){
 			aaz.libhpsocket.helper.httpClient.reallocString(component, 0);
 			thread.command.post("onChromeClose");
 		}
@@ -143,8 +132,8 @@ class dp{
 			}	
 		}
 		
-		thCmd.onChromeConnect = function(){
-			resume("connectChrome", true);
+		thCmd.onChromeConnect = function(ret){
+			resume("connectChrome", ret);
 		}
 				
 		..table.gc(this, "close");
@@ -153,8 +142,8 @@ class dp{
 	close = function(){
 		this.closeChrome();
 		timer.disable();
-		component.stop();
-		listener.destroy();	
+		httpClientComponent.stop();
+		httpClientListener.destroy();	
 	}
 	
 	init = function(){
@@ -167,26 +156,41 @@ class dp{
 		return yield(name); 
 	}
 		
-	openChrome = function(headless=false, userDataDir="\chrome.remote.userdata", port){
-		port := ..wsock.getFreePort()
+	open = function(chromePath, headless=false, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
+		this.closeChrome();
+		if(chromePath){
+			if(!..io.exist(chromePath)){
+				error(chromePath ++ " 文件不存在",2);
+			}
+		}
+		else {
+			chromePath = ..chrome.path();
+			if(!chromePath){
+				return null, "找不到 chrome 浏览器";
+			}
+		}
+		
+		port := ..wsock.getFreePort();
 		var cmd = {
 			"--remote-debugging-port=" ++ port;
 			"--user-data-dir=" ++ ..io.createDir(userDataDir);
-			"--disable-gpu";
+		}	
+		if(disableGpu){
+			..table.push(cmd, "--disable-gpu");
 		}
 		if(headless){
 			..table.push(cmd, "--headless");
 		}
-		
+	
 		cmd = ..string.join(cmd, " ");
 		var pid, err = ..process.execute(chromePath, cmd);
 		if(!pid){
 			return null, "启动 chrome 失败，原因：" ++ err; 
 		}
+		
 		chromePid = pid;
 		this.chromeHost = "localhost";
 		this.chromePort = port;
-		
 		return true; 
 	}
 
@@ -202,7 +206,6 @@ class dp{
 				return whttp.get(url);
 			},
 			url);
-
 		if(!html){
 			return null, err, code; 
 		}
@@ -239,36 +242,14 @@ class dp{
 		}
 	}
 	
-	open = function(headless, userDataDir, port){
-		this.closeChrome();
-		
-		var ok, err = this.openChrome(headless, userDataDir, port);
-		if(!ok){
-			return false, "启动 chrome 失败，原因：" ++ err; 
-		}
-		
+	connect = function(){
 		var wsPath, err = this.getWsDebugPath(this.chromeHost, this.chromePort);
 		if(!wsPath){
 			return false, err; 
 		}
 		..thread.set("wsPath", wsPath);
-		return true;
-	}
-	
-	newTab = function(){
 		
-	}
-	
-	activateTab = function(targetId){
-		
-	}
-	
-	closeTab = function(targetId){
-		
-	}
-	
-	connect = function(){
-		var ok, err = component.start(this.chromeHost, this.chromePort);
+		var ok, err = httpClientComponent.start(this.chromeHost, this.chromePort);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
@@ -291,14 +272,10 @@ class dp{
 		if(!fib){
 			return null, "创建 fiber 失败，原因：" ++  err; 
 		}
-		var ok, err = ..fiber.resume(fib, ...);	
-		if(!ok){
-			return false, "启动 fiber 失败，原因：" ++  err; 
-		}
+		assert(..fiber.resume(fib, ...));
 		currentFiber = fib;
 		return true; 
 	}
-
 
 	send = function(method, params){
 		requestId++;
@@ -307,7 +284,7 @@ class dp{
 			method = method;
 			params = params;
 		);
-		var ok = component.sendWsMessage(json);
+		var ok = httpClientComponent.sendWsMessage(json);
 		if(!ok){
 			return false, "发送请求数据失败"; 
 		}
@@ -321,6 +298,20 @@ class dp{
 		}
 		return yield(requestId); 
 	}
+	
+	
+	newTab = function(){
+		
+	}
+	
+	activateTab = function(targetId){
+		
+	}
+	
+	closeTab = function(targetId){
+		
+	}
+	
 	
 	@_meta;	
 }
@@ -364,7 +355,7 @@ end intellisense**/
 
 /**intellisense(!cdp)
 timeout = 设置单次请求超时，单位毫秒，默认 10000
-open(.(开启无头模式, 临时目录, 端口) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
+open(.(chrome exe路径, 开启无头模式, 临时目录, 端口, 禁用GPU) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
 connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
 run(.(任务函数, 不定参数) = 运行任务函数
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表

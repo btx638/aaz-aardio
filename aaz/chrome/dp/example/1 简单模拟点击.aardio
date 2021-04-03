@@ -10,7 +10,6 @@ io.open()
 
 import aaz.chrome.dp;
 
-
 var cdp, err = aaz.chrome.dp()
 if(!cdp){
     winform.msgboxErr(err);
@@ -22,7 +21,24 @@ cdp.timeout = 20000;
 cdp.onChromeEvent = function(method, params){
 	io.print("事件名字：", method);
 	io.print("事件内容：", table.tostring(params));
-}
+	
+
+	// 不请求图片
+	if(method == "Fetch.requestPaused"){
+		if(params.resourceType == "Image"){
+			cdp.send("Fetch.failRequest",{
+					requestId = params.requestId;
+					errorReason = "Aborted";
+			});
+		}
+		else {
+			cdp.send("Fetch.continueRequest",{
+				requestId = params.requestId;
+			});
+		}
+		
+	}
+}	
 
 var task = function(){
  	// 打开浏览器
@@ -38,6 +54,9 @@ var task = function(){
         io.print("连接浏览器失败", err);
     	return ; 
     }
+    
+    // 订阅 Fetch 事件，用于对网络请求的拦截
+	cdp.Fetch.enable()
     
 	// 订阅 Page 事件	
 	var ok, err = cdp.Page.enable();
