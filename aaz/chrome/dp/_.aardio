@@ -67,7 +67,7 @@ class dp{
 			if(!aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component)){
 				return 2; 
 			}
-			thread.command.post("onChromeConnect")
+			thread.command.post("onChromeConnect");
 		}
 		
 		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
@@ -109,7 +109,6 @@ class dp{
 			for(id, info in reqs){
 				if((now-info.tick)>this.timeout){
     				resume(id, false, "timeout");
-    				reqs[id] = null;
 				}
 			}
 		}
@@ -312,7 +311,7 @@ class dp{
 		if(!requestId){
 			return null, err; 
 		}
-		return this.yield(requestId); 
+		return yield(requestId); 
 	}
 	
 	@_meta;	
