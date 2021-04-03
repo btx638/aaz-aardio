@@ -10,6 +10,9 @@ Table of Contents
 * [Dependents](#Dependents)
 * [Attributes](#Attributes)
 	* [timeout](#timeout)
+	* [lastTaskDuration](#lastTaskDuration)
+	* [onTaskBegin](#onTaskBegin)
+	* [onTaskEnd](#onTaskEnd)
 * [Methods](#Methods)
     * [open](#open)
     * [connect](#connect)
@@ -76,15 +79,15 @@ var uiLog = function(str){
 	statusbar.setText(str, 2);
 }
 
-var currentRunningName;
+var currentTaskStepName;
 var uiLogRunning = function(name){
     var str = string.format("正在%s...", name);
-    currentRunningName = name;
+    currentTaskStepName = name;
 	uiLog(str);	
 }
 
 var uiLogFail = function(name, err){
-    name := currentRunningName;
+    name := currentTaskStepName;
     var str = string.format("%s失败，原因：%s", name, err);
 	uiLog(str);
 }
@@ -105,19 +108,28 @@ var closeChrome = function(){
 	return cdp.Browser.close(); 
 }
 
-var onTaskBegin = function(){
+var doFail = function(name, err){
+    uiLogFail(name, err);
+	closeChrome();
+}
+
+// 任务开始时触发
+cdp.onTaskBegin = function(){
 	winform.button.disabled = true
-	currentRunningName = null;
+	currentTaskStepName = null;
 	uiInit();
 }
 
-var onTaskEnd = function(result, duration){
+// 任务结束时触发
+cdp.onTaskEnd = function(result, err){
 	winform.button.disabled = false
 	
-	if(!duration){
+	if(!result){
+		doFail(currentTaskStepName, err)
 		return ; 
 	}
-	uiLog("任务完成，用时：" ++ duration ++ "毫秒")
+	
+	uiLog("任务完成，用时：" ++ cdp.lastTaskDuration ++ "毫秒")
 	
 	// 读取结果
 	for(i=1;#result;1){
@@ -125,36 +137,24 @@ var onTaskEnd = function(result, duration){
 	}
 }
 
-var doFail = function(name, err){
-    uiLogFail(name, err);
-	closeChrome();
-	onTaskEnd();
-	return false; 
-}
 
 var task = function(url, selector){
-    onTaskBegin();
-    var tick = time.tick()
-
  	uiLogRunning("打开浏览器");
 	var ok, err = cdp.open(true);
     if(!ok){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
     }
 	
 	uiLogRunning("连接浏览器");
     var ok, err = cdp.connect();
     if(!ok){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
     }
     
 	uiLogRunning("订阅 Page 事件");	
 	var ok, err = cdp.Page.enable();
     if(!ok){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
     }
 	
 	// 打开网址
@@ -163,22 +163,19 @@ var task = function(url, selector){
 		url = url;
 	)
     if(!ok){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
     }
 	
 	uiLogRunning("等待页面加载完成");
 	var ok, err = cdp.waitEvent("Page.loadEventFired");
     if(!ok){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
     }
- 	
+ 
 	uiLogRunning("开启 runtime");
 	var ok, err = cdp.Runtime.enable()
 	if(!ok){
-		doFail( null, err);
-		return ; 
+		return null, err; 
 	}
 	
 	uiLogRunning("编译脚本");
@@ -198,19 +195,16 @@ var task = function(url, selector){
 	)
 
 	if(!ret){
-        doFail( null, err);
-    	return ; 
+    	return null, err; 
 	}
 	// 检查编译的结果
 	// 发现错误
 	if(ret.exceptionDetails){
-        doFail(
-        	null, 
+    	return 
+    		null, 
         	" 行号：" ++ ret.exceptionDetails.lineNumber ++
         	" 列号：" ++ ret.exceptionDetails.columnNumber ++ 
-        	" 内容：" ++ ret.exceptionDetails.exception.description
-        );
-    	return ; 
+        	" 内容：" ++ ret.exceptionDetails.exception.description; 
 	}
 	
 	
@@ -220,8 +214,7 @@ var task = function(url, selector){
 		returnByValue = true;
 	)
 	if(!ret){
-		doFail(null, err);
-		return ; 
+		return null, err; 
 	}
 	
 	uiLogRunning("对全局对象的表达式求值");
@@ -230,8 +223,7 @@ var task = function(url, selector){
 		returnByValue = true;
 	)
 	if(!ret){
-		doFail(null, err);
-		return ; 
+		return null, err; 
 	}
 	var result = ret.result;
 	
@@ -239,24 +231,22 @@ var task = function(url, selector){
 	// 看看有没有错误
 	select(result.subtype) {
 		case "error" {
-			doFail(null, result.description);
-			return ; 
+			return null, result.description; 
 		}
 	}
 
 	uiLogRunning("关闭浏览器");
 	var ok, err = closeChrome();
 	if(!ok){
-		doFail(null, err);
-		return ; 
+		return null, err; 
 	}
-
-	onTaskEnd(result.value, time.tick() - tick);
-	return true; 
+	
+	// 返回结果
+	return result.value; 
 }
 
 winform.button.oncommand = function(id,event){
-	cdp.run(task, winform.edUrl.text, winform.edSelector.text);
+	assert(cdp.run(task, winform.edUrl.text, winform.edSelector.text))
 }
 
 winform.show();
