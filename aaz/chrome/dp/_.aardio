@@ -349,8 +349,7 @@ namespace dp{
 // https://chromedevtools.github.io/devtools-protocol/
 /**intellisense(aaz.chrome)
 dp = 谷歌开发者工具协议辅助库
-dp(.(谷歌浏览器exe路径 可选) = 创建谷歌开发者工具协议辅助对象
-dp() = !cdp.
+dp() = 创建谷歌开发者工具协议辅助对象\n!cdp.
 end intellisense**/
 
 /**intellisense(!cdp)
