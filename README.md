@@ -58,6 +58,8 @@ static2={cls="static";text="selector ";left=8;top=320;right=63;bottom=344;align=
 )
 /*}}*/
 
+io.open()
+
 import win.ui.statusbar;
 import aaz.chrome.dp;
 
@@ -120,7 +122,7 @@ cdp.onTaskBegin = function(){
 	uiInit();
 }
 
-// 任务结束时触发
+// 任务结束时触发，可以接收任务函数的返回值
 cdp.onTaskEnd = function(result, err){
 	winform.button.disabled = false
 	
@@ -137,10 +139,10 @@ cdp.onTaskEnd = function(result, err){
 	}
 }
 
-
 var task = function(url, selector){
  	uiLogRunning("打开浏览器");
-	var ok, err = cdp.open(true);
+ 	// 开启无头模式，没有界面
+	var ok, err = cdp.open(null, true);
     if(!ok){
     	return null, err; 
     }
