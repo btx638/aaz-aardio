@@ -355,8 +355,15 @@ end intellisense**/
 
 /**intellisense(!cdp)
 timeout = 设置单次请求超时，单位毫秒，默认 10000
-open(.(chrome exe路径, 开启无头模式, 临时目录, 端口, 禁用GPU) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
+open(.(chrome exe路径, 是否无头模式, 临时目录, 端口, 是否禁用GPU) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
 connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
-run(.(任务函数, 不定参数) = 运行任务函数
+run(.(任务函数, 任务函数的不定参数) = 运行任务函数，参数@1为任务函数
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
+lastTaskDuration = "最近一次任务的消耗时长，单位毫秒"
+onTaskBegin = @.onTaskBegin = function(){
+    __/*该事件函数在任务开始时触发*/
+}
+onTaskEnd = @.onTaskBegin = function(...){
+    __/*该事件函数在任务结束时触发，任务返回值作为参数*/
+}
 end intellisense**/
