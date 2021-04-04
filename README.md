@@ -41,6 +41,7 @@ Examples
 
 获取节点内容
 ------------
+* 运行前请把谷歌浏览器更新到最新版本，低版本对 windows 下的无头模式支持不好
 
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/3.gif)
 
