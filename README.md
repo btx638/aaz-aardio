@@ -140,9 +140,10 @@ cdp.onTaskEnd = function(result, err){
 	}
 }
 
+
 var task = function(url, selector){
  	uiLogRunning("打开浏览器");
- 	// 开启无头模式，没有界面
+ 	// 开启无头模式，没有界面，如果出现超时失败，可能是安装的谷歌浏览器版本太低，请更新到最新版本
 	var ok, err = cdp.open(null, true);
     if(!ok){
     	return null, err; 
