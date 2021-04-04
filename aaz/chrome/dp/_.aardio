@@ -338,9 +338,10 @@ namespace dp{
     	}
 	
     	_call = function(params){
-    		var m = ..string.match(owner.method, "^(\a+?)\.");
+    		..io.print( owner.method )
+    		var m = ..string.match(owner.method, "^(\a+)\.?");
     		if(!methods[m]){
-    			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 1);
+    			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 2);
     		}
     		return owner.xcall(owner.method, params); 	
     	}	
