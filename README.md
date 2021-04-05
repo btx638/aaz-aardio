@@ -20,7 +20,9 @@ Table of Contents
     * [run](#run)
 * [Properties](#Properties)
 * [Examples](#Examples)
+	* [简单模拟点击](#简单模拟点击)
 	* [获取节点内容](#获取节点内容)
+	* [拦截指定类型的请求](#拦截指定类型的请求)
 
 Dependents
 ==========
@@ -38,19 +40,102 @@ open
 
 **syntax** *open(chromePath, headless, userDataDir, port, disableGpu)*
 
-| Argument | Description |type|Optional|default|
+| Argument | Description |type|default|Optional|
 |:---------|:----|:----:|:------------:|:------|
-|chromePath|谷歌浏览器路径|string|*|
-|headless|以无头模式运行|boolean|*|false|
-|userDataDir|用户目录|string|*|\chrome.remote.userdata|
-|port|调试端口|number|*|
-|disableGpu|禁用GPU|boolean|*|true|
+|chromePath|谷歌浏览器路径|string||*|
+|headless|以无头模式运行|boolean|false|*|
+|userDataDir|用户目录|string|\chrome.remote.userdata|*|
+|port|调试端口|number||*|
+|disableGpu|禁用GPU|boolean|true|*|
 
 Properties
 ==========
 
 Examples
 =======
+
+简单模拟点击
+------------
+
+![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/1.gif)
+
+````javascript
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=385;bottom=140)
+winform.add(
+button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+cdp.timeout = 20000;
+
+var task = function(){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+    
+	// 订阅 Page 事件	
+	var ok, err = cdp.Page.enable();
+    if(!ok){
+        io.print("订阅 Page 事件失败", err);
+    	return ; 
+    }
+	
+	// 打开网址
+	var ok, err = cdp.Page.navigate(
+		url = "https://www.so.com";
+	)
+    if(!ok){
+        io.print("打开网址失败", err)
+    	return ; 
+    }
+	
+	// 等待页面加载完成
+	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    if(!ok){
+        io.print("等待页面加载完成失败", err);
+    	return ; 
+    }
+
+	// 执行代码
+	var ok, err = cdp.Runtime.evaluate(
+		expression = /**
+       document.querySelector("#input").value = "aardio";
+       document.querySelector("#search-button").click();
+		**/
+	)
+
+}
+
+winform.button.oncommand = function(id,event){
+	io.print(cdp.run(task));
+}
+
+winform.show();
+win.loopMessage();
+````
+
+[Back to TOC](#Examples)
 
 获取节点内容
 ------------
@@ -269,6 +354,103 @@ winform.button.oncommand = function(id,event){
 winform.show();
 win.loopMessage();
 return winform;
+````
+
+[Back to TOC](#Examples)
+
+拦截指定类型的请求
+------------
+
+![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/4.gif)
+
+````javascript
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=385;bottom=140)
+winform.add(
+button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+cdp.timeout = 20000;
+
+// 接收事件
+cdp.onChromeEvent = function(method, params){
+	if(method == "Fetch.requestPaused"){
+		// 发现请求图片
+		if(params.resourceType == "Image"){
+			// 中止请求   使用 raw 属性可以不等待请求的返回值，立即返回
+			cdp.raw.Fetch.failRequest(
+				requestId = params.requestId;
+				errorReason = "Aborted";
+			);
+		}
+		else {
+			// 继续其他的请求
+			cdp.raw.Fetch.continueRequest(
+				requestId = params.requestId;
+			);
+		}
+	}
+}	
+
+var task = function(){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+    
+    // 订阅 Fetch 事件，用于对网络请求的拦截
+	 cdp.Fetch.enable()
+ 
+	// 订阅 Page 事件	
+	var ok, err = cdp.Page.enable();
+    if(!ok){
+        io.print("订阅 Page 事件失败", err);
+    	return ; 
+    }
+	
+	// 打开网址
+	var ok, err = cdp.Page.navigate(
+		url = "https://www.cnbeta.com/";
+	)
+    if(!ok){
+        io.print("打开网址失败", err)
+    	return ; 
+    }
+	
+	// 等待页面加载完成
+	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    if(!ok){
+        io.print("等待页面加载完成失败", err);
+    	return ; 
+    }
+}
+
+winform.button.oncommand = function(id,event){
+	io.print(cdp.run(task));
+}
+
+winform.show();
+win.loopMessage();
 ````
 
 [Back to TOC](#table-of-contents)

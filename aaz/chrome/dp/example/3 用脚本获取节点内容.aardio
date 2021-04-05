@@ -21,7 +21,7 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 9000;
+cdp.timeout = 5000;
 
 var statusbar = win.ui.statusbar(winform);
 statusbar.addItem("运行状态：", 70);
@@ -68,12 +68,14 @@ var doFail = function(name, err){
 	closeChrome();
 }
 
+// 任务开始时触发
 cdp.onTaskBegin = function(){
 	winform.button.disabled = true
 	currentTaskStepName = null;
 	uiInit();
 }
 
+// 任务结束时触发，可以接收任务函数的返回值
 cdp.onTaskEnd = function(result, err){
 	winform.button.disabled = false
 	
@@ -90,9 +92,10 @@ cdp.onTaskEnd = function(result, err){
 	}
 }
 
+
 var task = function(url, selector){
  	uiLogRunning("打开浏览器");
- 	// 开启无头模式，没有界面
+ 	// 开启无头模式，没有界面，如果出现超时失败，可能是安装的谷歌浏览器版本太低，请更新到最新版本
 	var ok, err = cdp.open(null, true);
     if(!ok){
     	return null, err; 

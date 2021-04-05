@@ -259,6 +259,7 @@ namespace dp{
     			}
     			owner[[k]] = {
     				xcall = owner.xcall;
+    				send = owner.send;
     				method = k;
     				@_meta;
     			}
@@ -267,6 +268,13 @@ namespace dp{
     	};
     	_call = function(params){
     		var m = ..string.match(owner.method, "^(\a+)\.?");
+    		if(m == "raw"){
+    			m = ..string.match(owner.method, "^\a+\.(\a+)\.?");
+    			if(methods[m]){
+    				m = ..string.match(owner.method, "^\a+\.(.+)$");
+    				return owner.send(m, params); 
+    			}
+    		}
     		if(!methods[m]){
     			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 2);
     		}
