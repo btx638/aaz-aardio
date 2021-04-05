@@ -5,8 +5,6 @@ import inet.whttp;
 import inet.url;
 import win.timer;
 import thread.command;
-import aaz.libhpsocket.listener.httpClient;
-import aaz.libhpsocket.component.httpClient;
 
 namespace aaz.chrome;
 class dp{
@@ -52,73 +50,12 @@ class dp{
 		}
 		timer.enable()
 			
-		var httpClientListener = ..aaz.libhpsocket.listener.httpClient();
-		var httpClientComponent = ..aaz.libhpsocket.component.httpClient(httpClientListener);
-			
-		httpClientListener.onThreadCreated = function(){
-			import web.json;
-			import thread.command;
-			import aaz.libhpsocket.helper.httpClient;
-		}
-		
-		httpClientListener.onHandShake = function(component, connId){
-			var wsPath = ..thread.get("wsPath")
-			aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(component, wsPath);
-		}
-		
-		httpClientListener.onUpgrade = function(component, connId, upgradeType){
-			if(1!= upgradeType){
-				return 2; 
-			}
-			if(!aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component)){
-				thread.command.post("onChromeConnect", false);
-				return 2; 
-			}
-			thread.command.post("onChromeConnect", true);
-		}
-		
-		httpClientListener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
-			aaz.libhpsocket.helper.httpClient.reallocString(component, bodyLen);
-		}
-		
-		httpClientListener.onWsMessageBody = function(component, connId, pData, len){
-			aaz.libhpsocket.helper.httpClient.appendString(component, pData, len);	
-		}
-		
-		httpClientListener.onWsMessageComplete = function(component, connId){
-			var json = aaz.libhpsocket.helper.httpClient.getString(component);
-			if(json){
-				var t = web.json.tryParse(json)
-				if(type(t) == type.table){
-					// 请求回复
-					if(t.id){
-						if(t.error){
-							thread.command.post("onChromeResponse", t.id, null, t.error.message);
-						}
-						else {
-							thread.command.post("onChromeResponse", t.id, t.result);
-						}
-					} // 订阅事件
-					elseif(t.method){
-					  	thread.command.post("onChromeEvent", t.method, t.params);
-					}
-				}
-			}
-		}
-		
-		httpClientListener.onClose = function(component,connId,enOperation,errCode){
-			aaz.libhpsocket.helper.httpClient.reallocString(component, 0);
-			thread.command.post("onChromeClose");
-		}
-
-
-		
-		var thCmd = ..thread.command();
-		thCmd.onChromeResponse = function(id, result, err){
+		var httpClient = ..aaz.chrome.dp.hpsocket.httpClient();
+		httpClient.onChromeResponse = function(id, result, err){
     		resume(id, result, err);
 		}
 
-		thCmd.onChromeEvent = function(method, params){	
+		httpClient.onChromeEvent = function(method, params){	
 			resume(method, params)
 
 			if(this[["onChromeEvent"]]){
@@ -132,8 +69,8 @@ class dp{
 			}	
 		}
 		
-		thCmd.onChromeConnect = function(ret){
-			resume("connectChrome", ret);
+		httpClient.onChromeConnect = function(...){
+			resume("connectChrome", ...);
 		}
 				
 		..table.gc(this, "close");
@@ -239,7 +176,9 @@ class dp{
 	};	
 	closeChrome = function(){
 		if(chromePid){
-			..process.kill(chromePid);
+			try{
+				..process.kill(chromePid);
+			}
 			chromePid = null;
 		}
 	};
@@ -248,9 +187,9 @@ class dp{
 		if(!wsPath){
 			return false, err; 
 		}
-		..thread.set("wsPath", wsPath);
+		httpClient.setWsPath(wsPath);
 		
-		var ok, err = httpClientComponent.start(this.chromeHost, this.chromePort);
+		var ok, err = httpClient.connect(this.chromeHost, this.chromePort);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
@@ -283,7 +222,7 @@ class dp{
 			method = method;
 			params = params;
 		);
-		var ok = httpClientComponent.sendWsMessage(json);
+		var ok = httpClient.sendWsMessage(json);
 		if(!ok){
 			return false, "发送请求数据失败"; 
 		}
@@ -306,7 +245,8 @@ class dp{
 }
 namespace dp{
     namespace ..global{
-        import aaz.chrome.dp.methods;	
+        import aaz.chrome.dp.methods;
+        import aaz.chrome.dp.hpsocket.httpClient;	
     }
     var methods = methods;
     

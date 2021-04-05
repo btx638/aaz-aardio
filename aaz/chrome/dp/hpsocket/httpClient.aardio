@@ -1,0 +1,191 @@
+﻿import thread.command;
+import util.metaProperty;
+import aaz.libhpsocket.listener.httpClient;
+import aaz.libhpsocket.component.httpClient;
+import aaz.libhpsocket.helper.httpClient;
+import aaz.libhpsocket.helper.extra;
+
+namespace aaz.chrome.dp.hpsocket;
+class httpClient{
+	ctor(){
+		var listener = ..aaz.libhpsocket.listener.httpClient();
+		var component = ..aaz.libhpsocket.component.httpClient(listener);
+		
+		listener.onThreadCreated = function(){
+			import web.json;
+			import thread.command;
+			import aaz.chrome.dp.hpsocket.httpClient;
+		}
+		
+		listener.onHandShake = function(component, connId){
+			aaz.chrome.dp.hpsocket.httpClient.sendWsUpgradeRequest(component);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			if(1!= upgradeType){
+				return 2; 
+			}
+			if(!aaz.chrome.dp.hpsocket.httpClient.checkWsUpgradeResponse(component)){
+				thread.command.post("onChromeConnect", false, "websocket upgrade key 验证失败");
+				return 2; 
+			}
+			thread.command.post("onChromeConnect", true);
+		}
+		
+		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+			aaz.chrome.dp.hpsocket.httpClient.onWsMessageHeader(component, bodyLen);
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){
+			aaz.chrome.dp.hpsocket.httpClient.onWsMessageBody(component, pData, len);	
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			var json = aaz.chrome.dp.hpsocket.httpClient.onWsMessageComplete(component);
+			if(json){
+				var t = web.json.tryParse(json)
+				if(type(t) == type.table){
+					// 请求回复
+					if(t.id){
+						if(t.error){
+							thread.command.post("onChromeResponse", t.id, null, t.error.message);
+						}
+						else {
+							thread.command.post("onChromeResponse", t.id, t.result);
+						}
+					} // 订阅事件
+					elseif(t.method){
+					  	thread.command.post("onChromeEvent", t.method, t.params);
+					}
+				}
+			}
+		}
+		
+		listener.onClose = function(component,connId,enOperation,errCode){
+			aaz.chrome.dp.hpsocket.httpClient.onClose(component);
+			thread.command.post("onChromeClose");
+		}
+		
+		var thCmd = ..thread.command()
+		thCmd.onChromeConnect = function(...){
+			if this.onChromeConnect this.onChromeConnect(...)
+		}
+		
+		thCmd.onChromeResponse = function(...){
+			if this.onChromeResponse this.onChromeResponse(...)
+		}
+		
+		thCmd.onChromeEvent = function(...){
+			if this.onChromeEvent this.onChromeEvent(...)
+		}
+		
+		..table.gc(this, "close");
+	};
+	close = function(){
+		component.stop();
+		listener.destroy();		
+	};
+	connect = function(chromeHost, chromePort){
+		return component.start(chromeHost, chromePort);
+	};
+	sendWsMessage = function(str){
+		return component.sendWsMessage(str);
+	};
+	setWsPath = function(wsPath){
+		var userdata = newUserdata(wsPath);
+		component.extra = userdata.extra;
+	};	
+}
+namespace httpClient{
+	class userdata{
+		ctor(wsPath){
+			this.wsPath = wsPath;
+		}
+		byte wsPath[100];
+		byte wsKey[24];
+		pointer wsMessage;
+		@_metaProperty;
+	}
+	userdata._metaProperty = ..util.metaProperty(
+		reallocWsMessage = function(len){
+			owner.wsMessage = ..raw.realloc(len, owner.wsMessage, "");  
+		};
+		concatWsMessage = function(pData, len){
+			owner.wsMessage = ..raw.concat(owner.wsMessage, pData, len);
+		};
+		getWsMessage = function(){
+			return ..raw.tostring(owner.wsMessage, 1, ..raw.sizeof(owner.wsMessage)); 	
+		};
+		freeWsMessage = function(){
+			if(owner.wsMessage){
+				owner.wsMessage = ..raw.realloc(0, owner.wsMessage);
+			}
+		};
+	)
+	
+	newUserdata = function(wsPath){
+		var data  = userdata(wsPath);
+		return ..aaz.libhpsocket.helper.extra(data);
+	}
+
+	var getUserdata = function(component){
+		var data  = userdata();
+		return ..aaz.libhpsocket.helper.extra(data, component.extra);	
+	}
+	
+	var getWsPath = function(component){
+		var data = getUserdata(component);
+		return data.wsPath; 
+	}
+	
+	var getWsUpgradeRequestKey = function(component){
+    	var userData = getUserdata(component);	
+    	return userData.wsKey;; 
+	}
+	
+	var saveWsUpgradeRequestKey = function(component, wsKey){
+		var userdata = getUserdata(component);
+		userdata.wsKey = wsKey;
+		userdata.save();
+	}
+	
+	sendWsUpgradeRequest = function(component){
+		var wsPath = getWsPath(component);
+		return ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(component, wsPath, null, saveWsUpgradeRequestKey);
+	}
+	
+	checkWsUpgradeResponse = function(component){
+		return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component, getWsUpgradeRequestKey);
+	}
+	
+	onWsMessageHeader = function(component, bodyLen){
+		var userData = getUserdata(component);
+		userData.reallocWsMessage(bodyLen);
+		userData.save();
+	}
+	
+	onWsMessageBody = function(component, pData, len){
+		if(!component.extra){
+			return ; 
+		}
+		var userData = getUserdata(component);
+		userData.concatWsMessage(pData, len);
+		userData.save();
+	}
+	
+	onWsMessageComplete = function(component){
+		if(!component.extra){
+			return ; 
+		}
+		var userData = getUserdata(component);
+		return userData.getWsMessage();
+	}
+	
+	onClose = function(component){
+		var data = getUserdata(component);
+		data.freeWsMessage();
+		data.free();
+		component.extra = null;
+	}   	
+}
+
