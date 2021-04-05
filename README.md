@@ -33,6 +33,19 @@ Attributes
 Methods
 =======
 
+open
+----
+
+**syntax** *open(chromePath, headless, userDataDir, port, disableGpu)*
+
+| Argument | Description |type|Optional|default|
+|:---------|:----|:----:|:------------:|:------|
+|chromePath|谷歌浏览器路径|string|*|
+|headless|以无头模式运行|boolean|*|false|
+|userDataDir|用户目录|string|*|\chrome.remote.userdata|
+|port|调试端口|number|*|
+|disableGpu|禁用GPU|boolean|*|true|
+
 Properties
 ==========
 

@@ -137,25 +137,21 @@ class dp{
 		}
 				
 		..table.gc(this, "close");
-	}
-	
+	};
 	close = function(){
 		this.closeChrome();
 		timer.disable();
 		httpClientComponent.stop();
 		httpClientListener.destroy();	
-	}
-	
+	};
 	init = function(){
 		requests = {};
 		requestId = 0;
 		this.lastTaskDuration = 0;
-	}
-	
+	};
 	waitEvent = function(name){
 		return yield(name); 
-	}
-		
+	};	
 	open = function(chromePath, headless=false, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
 		this.closeChrome();
 		if(chromePath){
@@ -171,6 +167,9 @@ class dp{
 		}
 		
 		port := ..wsock.getFreePort();
+		if(!port){
+			return null, "获取空闲端口失败，请指定端口"; 
+		}
 		var cmd = {
 			"--remote-debugging-port=" ++ port;
 			"--user-data-dir=" ++ ..io.createDir(userDataDir);
@@ -192,8 +191,7 @@ class dp{
 		this.chromeHost = "localhost";
 		this.chromePort = port;
 		return true; 
-	}
-
+	};
 	getRemoteInfo = function(host, port, path){
 		var url = "http://" ++ host ++ ":" ++ port ++ path;
 
@@ -210,12 +208,11 @@ class dp{
 			return null, err, code; 
 		}
 		return ..web.json.parse(html);
-	}
-	
-	getWsDebugPath = function(host, port){
+	};
+	getDebugPages = function(host, port){
 		var tab, err, code = this.getRemoteInfo(host, port, "/json");
 		if(!tab){
-			return null, "网络连接有误，获取 webSocketDebuggerUrl 失败，原因：" ++ err; 
+			return null, "网络连接有误，获取 debugPages 失败，原因：" ++ err; 
 		}
 		if(!#tab){
 			return null, "没有可用 websocket 目标的列表"; 
@@ -227,21 +224,25 @@ class dp{
 				..table.push(pages, tab[i]);
 			}
 		}
-		
+		return pages; 	
+	}
+	getWsDebugPath = function(host, port){
+		var pages, err = this.getDebugPages(host, port);
+		if(!pages){
+			return null, err; 
+		}
 		if(!#pages){
-			return null, "获取 webSocketDebuggerUrl 失败"; 
+			return null, "没有debugPages"; 
 		}
 		var uri = ..inet.url.split(pages[1].webSocketDebuggerUrl);
 		return uri.path; 		
-	}
-		
+	};	
 	closeChrome = function(){
 		if(chromePid){
 			..process.kill(chromePid);
 			chromePid = null;
 		}
-	}
-	
+	};
 	connect = function(){
 		var wsPath, err = this.getWsDebugPath(this.chromeHost, this.chromePort);
 		if(!wsPath){
@@ -254,8 +255,7 @@ class dp{
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
 		return this.waitEvent("connectChrome"); 
-	}
-	
+	};
 	run = function(func, ...){
 		this.init();
 		var fib, err = ..fiber.create(
@@ -275,8 +275,7 @@ class dp{
 		assert(..fiber.resume(fib, ...));
 		currentFiber = fib;
 		return true; 
-	}
-
+	};
 	send = function(method, params){
 		requestId++;
 		var json = ..web.json.stringify(
@@ -289,30 +288,20 @@ class dp{
 			return false, "发送请求数据失败"; 
 		}
 		return requestId; 
-	}
-
+	};
 	xcall = function(method, params){
 		var requestId, err = this.send(method, params);
 		if(!requestId){
 			return null, err; 
 		}
 		return yield(requestId); 
-	}
-	
-	
-	newTab = function(){
-		
-	}
-	
+	};
+	newTab = function(){	
+	};
 	activateTab = function(targetId){
-		
-	}
-	
-	closeTab = function(targetId){
-		
-	}
-	
-	
+	};
+	closeTab = function(targetId){	
+	};
 	@_meta;	
 }
 namespace dp{
@@ -335,15 +324,14 @@ namespace dp{
     			}
     			return owner[[k]]; 
     		}
-    	}
-	
+    	};
     	_call = function(params){
     		var m = ..string.match(owner.method, "^(\a+)\.?");
     		if(!methods[m]){
     			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 2);
     		}
     		return owner.xcall(owner.method, params); 	
-    	}	
+    	};	
     }  	
 }
 // https://chromedevtools.github.io/devtools-protocol/
