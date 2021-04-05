@@ -22,7 +22,9 @@ cdp.onChromeEvent = function(method, params){
 	if(method == "Fetch.requestPaused"){
 		// 发现请求图片
 		if(params.resourceType == "Image"){
-			// 中止请求   使用 raw 属性可以不等待请求的返回值，立即返回
+			// 中止请求
+			// 使用 raw 属性可以不等待请求的返回值，立即返回
+			// 不是 raw 属性下的所有 Chrome DevTools Protocol 方法都要写在任务函数里面
 			cdp.raw.Fetch.failRequest(
 				requestId = params.requestId;
 				errorReason = "Aborted";
