@@ -5,6 +5,7 @@ import inet.whttp;
 import inet.url;
 import win.timer;
 import thread.command;
+import aaz.libhpsocket.app.simpleWebsocketClient;
 
 namespace aaz.chrome;
 class dp{
@@ -50,12 +51,13 @@ class dp{
 		}
 		timer.enable()
 			
-		var httpClient = ..aaz.chrome.dp.hpsocket.httpClient();
-		httpClient.onChromeResponse = function(id, result, err){
+
+		var thCmd = ..thread.command();
+		thCmd.onChromeResponse = function(id, result, err){
     		resume(id, result, err);
 		}
 
-		httpClient.onChromeEvent = function(method, params){	
+		thCmd.onChromeEvent = function(method, params){	
 			resume(method, params)
 
 			if(this[["onChromeEvent"]]){
@@ -69,17 +71,51 @@ class dp{
 			}	
 		}
 		
-		httpClient.onChromeConnect = function(...){
+		thCmd.onChromeConnect = function(...){
 			resume("connectChrome", ...);
 		}
+
+		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient();
+		ws.onThreadCreated = function(){
+			import thread.command;
+			import web.json;
+		}
+		
+		ws.onOpen = function(){
+			thread.command.post("onChromeConnect", true);
+		}
+		
+		ws.onClose = function(){
+			thread.command.post("onChromeConnect", false);
+		}
+		
+		ws.onMessage = function(msg){
+			if(msg){
+				var t = web.json.tryParse(msg)
+				if(type(t) == type.table){
+					// 请求回复
+					if(t.id){
+						if(t.error){
+							thread.command.post("onChromeResponse", t.id, null, t.error.message);
+						}
+						else {
+							thread.command.post("onChromeResponse", t.id, t.result);
+						}
+					} // 订阅事件
+					elseif(t.method){
+					  	thread.command.post("onChromeEvent", t.method, t.params);
+					}
+				}
+			}
+		}
+		ws.listen();
 				
 		..table.gc(this, "close");
 	};
 	close = function(){
 		this.closeChrome();
 		timer.disable();
-		httpClientComponent.stop();
-		httpClientListener.destroy();	
+		ws.close();
 	};
 	init = function(){
 		requests = {};
@@ -163,7 +199,7 @@ class dp{
 		}
 		return pages; 	
 	}
-	getWsDebugPath = function(host, port){
+	getDebuggerUrl = function(host, port){
 		var pages, err = this.getDebugPages(host, port);
 		if(!pages){
 			return null, err; 
@@ -171,8 +207,7 @@ class dp{
 		if(!#pages){
 			return null, "没有debugPages"; 
 		}
-		var uri = ..inet.url.split(pages[1].webSocketDebuggerUrl);
-		return uri.path; 		
+		return pages[1].webSocketDebuggerUrl; 		
 	};	
 	closeChrome = function(){
 		if(chromePid){
@@ -183,13 +218,11 @@ class dp{
 		}
 	};
 	connect = function(){
-		var wsPath, err = this.getWsDebugPath(this.chromeHost, this.chromePort);
-		if(!wsPath){
+		var url, err = this.getDebuggerUrl(this.chromeHost, this.chromePort);
+		if(!url){
 			return false, err; 
 		}
-		httpClient.setWsPath(wsPath);
-		
-		var ok, err = httpClient.connect(this.chromeHost, this.chromePort);
+		var ok, err = ws.connect(url);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
@@ -222,7 +255,8 @@ class dp{
 			method = method;
 			params = params;
 		);
-		var ok = httpClient.sendWsMessage(json);
+		//var ok = httpClient.sendWsMessage(json);
+		var ok = ws.send(json);
 		if(!ok){
 			return false, "发送请求数据失败"; 
 		}
@@ -246,7 +280,7 @@ class dp{
 namespace dp{
     namespace ..global{
         import aaz.chrome.dp.methods;
-        import aaz.chrome.dp.hpsocket.httpClient;	
+   //     import aaz.chrome.dp.hpsocket.httpClient;	
     }
     var methods = methods;
     
@@ -301,4 +335,24 @@ onTaskBegin = @.onTaskBegin = function(){
 onTaskEnd = @.onTaskBegin = function(...){
     __/*该事件函数在任务结束时触发，任务返回值作为参数*/
 }
+Page = 与被检查页面相关的动作和事件都属于页面域\n!Page.
+Target = 支持发现更多的目标，并允许附加到他们身上\n!Target.
+end intellisense**/
+
+/**intellisense(!Page)
+disable() = 禁用页面域通知
+enable() = 启用页面域通知
+getTargets() = 检索可用目标列表
+navigate() = 将当前页面导航到给定的URL
+bringToFront() = 将页面置于最前面（激活选项卡）
+end intellisense**/
+
+/**intellisense(!Target)
+activateTarget() = 激活（聚焦）目标
+attachToTarget() = 附加到给定id的目标上
+createTarget() = 创建一个新页面
+closeTarget() = 关闭目标。如果目标是一个页面，也会被关闭
+detachFromTarget() = 分离给定的id的会话
+getTargets() = 检索可用目标列表
+setDiscoverTargets() = 控制是否发现可用的目标，并通过 targetCreated/targetInfoChanged/targetDestroyed 事件通知
 end intellisense**/
