@@ -108,8 +108,7 @@ class dp{
 				}
 			}
 		}
-		ws.listen();
-				
+		
 		..table.gc(this, "close");
 	};
 	close = function(){
