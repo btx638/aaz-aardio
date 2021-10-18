@@ -11,18 +11,19 @@ Table of Contents
 * [Attributes](#Attributes)
 	* [timeout](#timeout)
 	* [lastTaskDuration](#lastTaskDuration)
-	* [onTaskBegin](#onTaskBegin)
-	* [onTaskEnd](#onTaskEnd)
 * [Methods](#Methods)
     * [open](#open)
     * [connect](#connect)
     * [waitEvent](#waitEvent)
     * [run](#run)
+* [Events](#Events)
+	* [onTaskBegin](#onTaskBegin)
+	* [onTaskEnd](#onTaskEnd)
 * [Properties](#Properties)
 * [Examples](#Examples)
 	* [简单模拟点击](#简单模拟点击)
 	* [获取节点内容](#获取节点内容)
-	* [拦截指定类型的请求](#拦截指定类型的请求)
+	* [拦截指定资源类型的请求](#拦截指定资源类型的请求)
 
 Dependents
 ==========
@@ -40,19 +41,57 @@ open
 
 **syntax** *open(chromePath, headless, userDataDir, port, disableGpu)*
 
-| Argument | Description |type|default|Optional|
-|:---------|:----|:----:|:------------:|:------|
-|chromePath|谷歌浏览器路径|string||*|
-|headless|以无头模式运行|boolean|false|*|
-|userDataDir|用户目录|string|\chrome.remote.userdata|*|
-|port|调试端口|number||*|
-|disableGpu|禁用GPU|boolean|true|*|
+| Argument |type|default|Optional| Description |
+|:---------|:----:|:------------:|:------|:----|
+|chromePath|string||*|谷歌浏览器路径|
+|headless|boolean|false|*|以无头模式运行|
+|userDataDir|string|\chrome.remote.userdata|*|用户目录|
+|port|number||*|调试端口|
+|disableGpu|boolean|true|*|禁用GPU|
+
+[Back to TOC](#Methods)
+
+run
+----
+
+**syntax** *run(task, ...)*
+
+[Back to TOC](#Methods)
+
+connect
+-------
+
+**syntax** *connect()*
+
+[Back to TOC](#Methods)
+
+waitEvent
+----
+
+[Back to TOC](#Methods)
+
+Events
+======
+
+onTaskBegin
+-----------
+
+**syntax** *onTaskBegin()*
+
+[Back to TOC](#Events)
+
+onTaskEnd
+-----------
+
+**syntax** *onTaskEnd(...)*
+
+[Back to TOC](#Events)
 
 Properties
 ==========
 
 Examples
-=======
+========
 
 简单模拟点击
 ------------
@@ -358,7 +397,7 @@ return winform;
 
 [Back to TOC](#Examples)
 
-拦截指定类型的请求
+拦截指定资源类型的请求
 ------------
 
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/4.gif)

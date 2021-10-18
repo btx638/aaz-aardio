@@ -4,17 +4,22 @@ import wsock;
 import inet.whttp;
 import inet.url;
 import win.timer;
+import win.guid;
 import thread.command;
-import aaz.libhpsocket.app.simpleWebsocketClient;
+import web.json;
+import aaz.libhpsocket.app.simpleWebsocketClient.ws;
 
 namespace aaz.chrome;
 class dp{
 	ctor(){	
 		this.timeout = 10000;
+		this.checkTimeoutInterval = 300;
 		this.lastTaskDuration = 0;
 		this.chromeHost = null; 
 		this.chromePort = null;
-
+		
+		this._sessionId = tostring(..win.guid.create());
+		
 		var requests = {};
 		var requestId = 0;
 		var currentFiber;
@@ -43,68 +48,51 @@ class dp{
 			}
 		}
 		
-		var timer = ..win.timer(null, 300);
+		var timer = ..win.timer(null, this.checkTimeoutInterval);
 		timer.onTimer = function(){
 			if(!currentFiber) return ; 
 			if(..fiber.status(currentFiber) != ..fiber.status.suspended) return ;
 			checkTimeout()
 		}
 		timer.enable()
-			
 
-		var thCmd = ..thread.command();
-		thCmd.onChromeResponse = function(id, result, err){
-    		resume(id, result, err);
-		}
-
-		thCmd.onChromeEvent = function(method, params){	
-			resume(method, params)
-
-			if(this[["onChromeEvent"]]){
-				this.onChromeEvent(method, params)
-			}
-			
-			// 浏览器关闭
-			if(method == "Inspector.detached"){
-				chromePid = null;
-				currentFiber = null;
-			}	
-		}
-		
-		thCmd.onChromeConnect = function(...){
-			resume("connectChrome", ...);
-		}
-
-		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient();
-		ws.onThreadCreated = function(){
-			import thread.command;
-			import web.json;
-		}
-		
+		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
 		ws.onOpen = function(){
-			thread.command.post("onChromeConnect", true);
+			resume("connectChrome", true);
 		}
 		
 		ws.onClose = function(){
-			thread.command.post("onChromeConnect", false);
+			resume("connectChrome", false);
 		}
 		
 		ws.onMessage = function(msg){
-			if(msg){
-				var t = web.json.tryParse(msg)
-				if(type(t) == type.table){
-					// 请求回复
-					if(t.id){
-						if(t.error){
-							thread.command.post("onChromeResponse", t.id, null, t.error.message);
-						}
-						else {
-							thread.command.post("onChromeResponse", t.id, t.result);
-						}
-					} // 订阅事件
-					elseif(t.method){
-					  	thread.command.post("onChromeEvent", t.method, t.params);
-					}
+			if(!msg){
+				return ; 
+			}
+			var t = ..web.json.tryParse(msg)
+			if(type(t) != type.table){
+				return ; 
+			}	
+			// 请求回复
+			if(t.id){
+				if(t.error){
+					resume(t.id, null, t.error.message);
+				}
+				else {
+					resume(t.id, t.result);
+				}
+			} // 订阅事件
+			elseif(t.method){
+				resume(t.method, t.params)
+	
+				if(this[["onChromeEvent"]]){
+					this.onChromeEvent(t.method, t.params)
+				}
+				
+				// 浏览器关闭
+				if(t.method == "Inspector.detached"){
+					chromePid = null;
+					currentFiber = null;
 				}
 			}
 		}
@@ -115,6 +103,14 @@ class dp{
 		this.closeChrome();
 		timer.disable();
 		ws.close();
+	};
+	closeChrome = function(){
+		if(chromePid){
+			try{
+				..process.kill(chromePid);
+			}
+			chromePid = null;
+		}
 	};
 	init = function(){
 		requests = {};
@@ -176,6 +172,7 @@ class dp{
 				return whttp.get(url);
 			},
 			url);
+			
 		if(!html){
 			return null, err, code; 
 		}
@@ -208,19 +205,12 @@ class dp{
 		}
 		return pages[1].webSocketDebuggerUrl; 		
 	};	
-	closeChrome = function(){
-		if(chromePid){
-			try{
-				..process.kill(chromePid);
-			}
-			chromePid = null;
-		}
-	};
 	connect = function(){
 		var url, err = this.getDebuggerUrl(this.chromeHost, this.chromePort);
 		if(!url){
 			return false, err; 
 		}
+		..io.print("url",url)
 		var ok, err = ws.connect(url);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
@@ -254,10 +244,9 @@ class dp{
 			method = method;
 			params = params;
 		);
-		//var ok = httpClient.sendWsMessage(json);
 		var ok = ws.send(json);
 		if(!ok){
-			return false, "发送请求数据失败"; 
+			return false, "发送 ws 请求数据失败"; 
 		}
 		return requestId; 
 	};
@@ -278,11 +267,10 @@ class dp{
 }
 namespace dp{
     namespace ..global{
-        import aaz.chrome.dp.methods;
-   //     import aaz.chrome.dp.hpsocket.httpClient;	
+        import aaz.chrome.dp.domain;
     }
-    var methods = methods;
-    
+    var domains = domain;
+
     _meta = {
     	_get = function(k){
     		var tt = type(k)
@@ -290,6 +278,7 @@ namespace dp{
     			if(owner[["method"]]){
     				k = owner[["method"]] ++ "." ++ k;  
     			}
+/*
     			owner[[k]] = {
     				xcall = owner.xcall;
     				send = owner.send;
@@ -297,21 +286,28 @@ namespace dp{
     				@_meta;
     			}
     			return owner[[k]]; 
+*/
+				return	{
+    				xcall = owner.xcall;
+    				send = owner.send;
+    				method = k;
+    				@_meta;
+    			}	
     		}
     	};
     	_call = function(params){
     		var m = ..string.match(owner.method, "^(\a+)\.?");
-    		if(m == "raw"){
+    		if(domains[m]){
+    			return owner.xcall(owner.method, params); 
+    		}
+    		elseif(m == "raw"){
     			m = ..string.match(owner.method, "^\a+\.(\a+)\.?");
-    			if(methods[m]){
+    			if(domains[m]){
     				m = ..string.match(owner.method, "^\a+\.(.+)$");
     				return owner.send(m, params); 
     			}
     		}
-    		if(!methods[m]){
-    			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 2);
-    		}
-    		return owner.xcall(owner.method, params); 	
+			error("调用了不支持的 Chrome DevTools Protocol 方法 " ++ owner.method, 2);	
     	};	
     }  	
 }
@@ -327,15 +323,17 @@ open(.(chrome exe路径, 是否无头模式, 临时目录, 端口, 是否禁用G
 connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
 run(.(任务函数, 任务函数的不定参数) = 运行任务函数，参数@1为任务函数
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
-lastTaskDuration = "最近一次任务的消耗时长，单位毫秒"
+lastTaskDuration = 最近一次任务的消耗时长，单位毫秒
 onTaskBegin = @.onTaskBegin = function(){
     __/*该事件函数在任务开始时触发*/
 }
-onTaskEnd = @.onTaskBegin = function(...){
+onTaskEnd = @.onTaskEnd = function(...){
     __/*该事件函数在任务结束时触发，任务返回值作为参数*/
 }
 Page = 与被检查页面相关的动作和事件都属于页面域\n!Page.
 Target = 支持发现更多的目标，并允许附加到他们身上\n!Target.
+Runtime = 运行时域通过远程评估和镜像对象来公开JavaScript运行时。\n评估结果以镜像对象的形式返回，该对象暴露了对象类型、字符串表示和唯一标识符，可用于进一步的对象引用。\n原始对象被保留在内存中，除非它们被显式释放或与它们对象组中的其他对象一起被释放。\n!Runtime.
+Network = 网络域允许跟踪网络活动的页面。\n它公开关于http、文件、数据和其他请求和响应、它们的头、正文、时间等的信息\n!Network.
 end intellisense**/
 
 /**intellisense(!Page)
@@ -355,3 +353,17 @@ detachFromTarget() = 分离给定的id的会话
 getTargets() = 检索可用目标列表
 setDiscoverTargets() = 控制是否发现可用的目标，并通过 targetCreated/targetInfoChanged/targetDestroyed 事件通知
 end intellisense**/
+
+/**intellisense(!Runtime)
+enable() = 启用通过 executionContextCreated 事件报告执行上下文创建。启用报告后，将立即为每个现有执行上下文发送事件。
+disable() = 禁用执行上下文创建的报告
+compileScript() = 编译表达式
+runScript() = 在给定上下文中运行具有给定id的脚本。
+evaluate() = 对全局对象的表达式求值
+getProperties() = 返回给定对象的属性。结果的对象组继承自目标对象。
+end intellisense**/
+
+/**intellisense(!Network)
+
+end intellisense**/
+

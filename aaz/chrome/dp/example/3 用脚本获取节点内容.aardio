@@ -21,7 +21,7 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 5000;
+cdp.timeout = 9000;
 
 var statusbar = win.ui.statusbar(winform);
 statusbar.addItem("运行状态：", 70);

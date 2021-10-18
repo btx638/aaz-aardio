@@ -54,6 +54,7 @@ var task = function(){
     	return ; 
     }
     
+
     // 订阅 Fetch 事件，用于对网络请求的拦截
 	 cdp.Fetch.enable()
  
