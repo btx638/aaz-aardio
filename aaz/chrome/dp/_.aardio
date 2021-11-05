@@ -17,9 +17,7 @@ class dp{
 		this.lastTaskDuration = 0;
 		this.chromeHost = null; 
 		this.chromePort = null;
-		
-		this._sessionId = tostring(..win.guid.create());
-		
+	
 		var requests = {};
 		var requestId = 0;
 		var currentFiber;
@@ -55,17 +53,8 @@ class dp{
 			checkTimeout()
 		}
 		timer.enable()
-
-		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
-		ws.onOpen = function(){
-			resume("connectChrome", true);
-		}
 		
-		ws.onClose = function(){
-			resume("connectChrome", false);
-		}
-		
-		ws.onMessage = function(msg){
+		var doMsg = function(msg){
 			if(!msg){
 				return ; 
 			}
@@ -94,8 +83,14 @@ class dp{
 					chromePid = null;
 					currentFiber = null;
 				}
-			}
+			}	
 		}
+		
+
+		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
+		ws.on("open", lambda() resume("connectChrome", true));
+		ws.on("close", lambda() resume("connectChrome", false));
+		ws.on("message", doMsg)
 		
 		..table.gc(this, "close");
 	};
@@ -120,7 +115,7 @@ class dp{
 	waitEvent = function(name){
 		return yield(name); 
 	};	
-	open = function(chromePath, headless=false, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
+	open = function(chromePath, headless=false, userDataDir, port, disableGpu=true){
 		this.closeChrome();
 		if(chromePath){
 			if(!..io.exist(chromePath)){
@@ -140,8 +135,15 @@ class dp{
 		}
 		var cmd = {
 			"--remote-debugging-port=" ++ port;
-			"--user-data-dir=" ++ ..io.createDir(userDataDir);
-		}	
+		}
+		if(userDataDir){
+			..table.push(cmd, "--user-data-dir=" ++ ..io.createDir(userDataDir))
+		}
+		else {
+		//	..table.push(cmd, "--user-data-dir=" ++ ..io.createDir("\chrome.remote.userdata"))
+		//	..table.push(cmd, "--disk-cache-size=0")
+		}
+			
 		if(disableGpu){
 			..table.push(cmd, "--disable-gpu");
 		}
