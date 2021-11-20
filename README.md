@@ -7,18 +7,17 @@
 ===
 
 * [依赖库](#依赖库)
-* [类属性](#类属性)
-	* [timeout](#timeout)
-	* [lastTaskDuration](#lastTaskDuration)
 * [类方法](#类方法)
     * [open](#open)
     * [connect](#connect)
     * [waitEvent](#waitEvent)
     * [run](#run)
+	* [on](#on)
+	* [setTimeout](#setTimeout)
 * [示例](#示例)
 	* [简单模拟点击](#简单模拟点击)
 	* [获取节点内容](#获取节点内容)
-	* [拦截指定资源类型的请求](#拦截指定资源类型的请求)
+	* [拦截指定资源类型的请求，例如不请求图片资源](#拦截指定资源类型的请求，例如不请求图片资源)
 
 依赖库
 =====
@@ -49,7 +48,7 @@ open
 run
 ----
 
-**syntax** *run(task, ...)*
+**语法** *run(task, onTaskBegin, onTaskEnd, ...)*
 
 [回到主题](#类方法)
 
@@ -146,7 +145,7 @@ var task = function(){
 }
 
 winform.button.oncommand = function(id,event){
-	io.print(cdp.run(task));
+	cdp.run(task)
 }
 
 winform.show();
@@ -377,7 +376,7 @@ win.loopMessage();
 return winform;
 ````
 
-[Back to TOC](#Examples)
+[返回目录](#示例)
 
 拦截指定资源类型的请求，例如不请求图片资源
 ------------
@@ -464,16 +463,16 @@ var task = function(){
     }
 }
 
-cdp.onTaskBegin = function(){
+var onTaskBegin = function(){
     winform.btnRunTask.disabled = true
 }
 
-cdp.onTaskEnd = function(...){
+var onTaskEnd = function(...){
     winform.btnRunTask.disabled = false
 }
 
 winform.btnRunTask.oncommand = function(id,event){
-	io.print(cdp.run(task));
+	cdp.run(task, onTaskBegin, onTaskEnd)
 }
 
 winform.show();
