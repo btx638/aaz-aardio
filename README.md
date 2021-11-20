@@ -1,97 +1,76 @@
-Name
+简介
 ====
 
-a little library for using [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) in [aardio](http://www.aardio.com/)
+这是用来使用 [谷歌开发者协议](https://chromedevtools.github.io/devtools-protocol/) 的类，特点是用纤程把异步回调转为同步调用
 
-Table of Contents
-=================
+目录
+===
 
-* [Name](#name)
-* [Dependents](#Dependents)
-* [Attributes](#Attributes)
+* [依赖库](#依赖库)
+* [类属性](#类属性)
 	* [timeout](#timeout)
 	* [lastTaskDuration](#lastTaskDuration)
-* [Methods](#Methods)
+* [类方法](#类方法)
     * [open](#open)
     * [connect](#connect)
     * [waitEvent](#waitEvent)
     * [run](#run)
-* [Events](#Events)
-	* [onTaskBegin](#onTaskBegin)
-	* [onTaskEnd](#onTaskEnd)
-* [Properties](#Properties)
-* [Examples](#Examples)
+* [示例](#示例)
 	* [简单模拟点击](#简单模拟点击)
 	* [获取节点内容](#获取节点内容)
 	* [拦截指定资源类型的请求](#拦截指定资源类型的请求)
 
-Dependents
-==========
+依赖库
+=====
 
 * [HP-Socket-aardio](https://github.com/btx638/HP-Socket-aardio)
 
-Attributes
-==========
+类属性
+=====
 
-Methods
-=======
+类方法
+=====
 
 open
 ----
 
 **syntax** *open(chromePath, headless, userDataDir, port, disableGpu)*
 
-| Argument |type|default|Optional| Description |
-|:---------|:----:|:------------:|:------|:----|
+|Argument |type|default|Optional| Description |
+|:---------|:--:|:-----:|:-------|:------------|
 |chromePath|string||*|谷歌浏览器路径|
 |headless|boolean|false|*|以无头模式运行|
 |userDataDir|string|\chrome.remote.userdata|*|用户目录|
 |port|number||*|调试端口|
 |disableGpu|boolean|true|*|禁用GPU|
 
-[Back to TOC](#Methods)
+[回到主题](#类方法)
 
 run
 ----
 
 **syntax** *run(task, ...)*
 
-[Back to TOC](#Methods)
+[回到主题](#类方法)
 
 connect
 -------
 
 **syntax** *connect()*
 
-[Back to TOC](#Methods)
+[回到主题](#类方法)
 
 waitEvent
 ----
 
-[Back to TOC](#Methods)
+[回到主题](#类方法)
 
-Events
-======
+类属性
+=====
 
-onTaskBegin
------------
-
-**syntax** *onTaskBegin()*
-
-[Back to TOC](#Events)
-
-onTaskEnd
------------
-
-**syntax** *onTaskEnd(...)*
-
-[Back to TOC](#Events)
-
-Properties
-==========
-
-Examples
-========
+示例 
+====
+* 运行前请把谷歌浏览器更新到最新版本
 
 简单模拟点击
 ------------
@@ -132,14 +111,14 @@ var task = function(){
         io.print("连接浏览器失败", err);
     	return ; 
     }
-    
+
 	// 订阅 Page 事件	
 	var ok, err = cdp.Page.enable();
     if(!ok){
         io.print("订阅 Page 事件失败", err);
     	return ; 
     }
-	
+
 	// 打开网址
 	var ok, err = cdp.Page.navigate(
 		url = "https://www.so.com";
@@ -178,7 +157,7 @@ win.loopMessage();
 
 获取节点内容
 ------------
-* 运行前请把谷歌浏览器更新到最新版本，低版本的无头模式对 windows 支持不好
+
 
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/3.gif)
 
@@ -206,7 +185,9 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 9000;
+
+// 设置每次请求的超时
+cdp.setTimeout(9000);
 
 var statusbar = win.ui.statusbar(winform);
 statusbar.addItem("运行状态：", 70);
@@ -254,14 +235,14 @@ var doFail = function(name, err){
 }
 
 // 任务开始时触发
-cdp.onTaskBegin = function(){
+var onTaskBegin = function(){
 	winform.button.disabled = true
 	currentTaskStepName = null;
 	uiInit();
 }
 
 // 任务结束时触发，可以接收任务函数的返回值
-cdp.onTaskEnd = function(result, err){
+var onTaskEnd = function(result, err){
 	winform.button.disabled = false
 	
 	if(!result){
@@ -269,14 +250,13 @@ cdp.onTaskEnd = function(result, err){
 		return ; 
 	}
 	
-	uiLog("任务完成，用时：" ++ cdp.lastTaskDuration ++ "毫秒")
+	uiLog("任务完成")
 	
 	// 读取结果
 	for(i=1;#result;1){
 		uiResult(result[i]);
 	}
 }
-
 
 var task = function(url, selector){
  	uiLogRunning("打开浏览器");
@@ -387,8 +367,10 @@ var task = function(url, selector){
 }
 
 winform.button.oncommand = function(id,event){
-	assert(cdp.run(task, winform.edUrl.text, winform.edSelector.text))
+	cdp.run(task, onTaskBegin,  onTaskEnd, winform.edUrl.text, winform.edSelector.text)
 }
+
+
 
 winform.show();
 win.loopMessage();
@@ -397,7 +379,7 @@ return winform;
 
 [Back to TOC](#Examples)
 
-拦截指定资源类型的请求
+拦截指定资源类型的请求，例如不请求图片资源
 ------------
 
 ![运行动画](https://raw.githubusercontent.com/btx638/dp/master/aaz/chrome/dp/example/4.gif)
@@ -407,7 +389,7 @@ import win.ui;
 /*DSG{{*/
 var winform = win.form(text="aardio form";right=385;bottom=140)
 winform.add(
-button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+btnRunTask={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
 )
 /*}}*/
 
@@ -420,30 +402,25 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 20000;
 
 // 接收事件
-cdp.onChromeEvent = function(method, params){
-	if(method == "Fetch.requestPaused"){
-		// 发现请求图片
-		if(params.resourceType == "Image"){
-			// 中止请求
-			// 使用 raw 属性可以不等待请求的返回值，立即返回
-			// 不是 raw 属性下的所有 Chrome DevTools Protocol 方法都要写在任务函数里面
-			cdp.raw.Fetch.failRequest(
-				requestId = params.requestId;
-				errorReason = "Aborted";
-			);
-		}
-		else {
-			// 继续其他的请求
-			cdp.raw.Fetch.continueRequest(
-				requestId = params.requestId;
-			);
-		}
+cdp.on("Fetch.requestPaused", function(params){
+	// 请求类型为图片就中止请求
+	if(params.resourceType == "Image"){
+		cdp.Fetch.failRequest(
+			requestId = params.requestId;
+			errorReason = "Aborted";
+		);
 	}
-}	
-
+	else {
+		// 继续其他的请求
+		cdp.Fetch.continueRequest(
+			requestId = params.requestId;
+		);
+	}
+})
+	
+// 任务函数
 var task = function(){
  	// 打开浏览器
 	var ok, err = cdp.open()
@@ -459,6 +436,7 @@ var task = function(){
     	return ; 
     }
     
+
     // 订阅 Fetch 事件，用于对网络请求的拦截
 	 cdp.Fetch.enable()
  
@@ -486,7 +464,15 @@ var task = function(){
     }
 }
 
-winform.button.oncommand = function(id,event){
+cdp.onTaskBegin = function(){
+    winform.btnRunTask.disabled = true
+}
+
+cdp.onTaskEnd = function(...){
+    winform.btnRunTask.disabled = false
+}
+
+winform.btnRunTask.oncommand = function(id,event){
 	io.print(cdp.run(task));
 }
 
@@ -494,4 +480,4 @@ winform.show();
 win.loopMessage();
 ````
 
-[Back to TOC](#table-of-contents)
+[回到目录](#目录)

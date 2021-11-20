@@ -14,7 +14,6 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 20000;
 
 var task = function(){
  	// 打开浏览器
@@ -41,7 +40,7 @@ var task = function(){
 
 
 
-assert(cdp.run(task), 2)
+cdp.run(task)
 
 winform.show();
 win.loopMessage();

@@ -5,55 +5,24 @@ import inet.whttp;
 import inet.url;
 import win.timer;
 import win.guid;
-import thread.command;
 import web.json;
+import thread.command;
+import time.performance;
+import aaz.async;
 import aaz.libhpsocket.app.simpleWebsocketClient.ws;
 
 namespace aaz.chrome;
 class dp{
 	ctor(){	
-		this.timeout = 10000;
-		this.checkTimeoutInterval = 300;
-		this.lastTaskDuration = 0;
 		this.chromeHost = null; 
 		this.chromePort = null;
-	
-		var requests = {};
+		
+		var async = ..aaz.async();
+
 		var requestId = 0;
-		var currentFiber;
 		var chromePid;
-		
-		var yield = function(requestId){
-			requests[requestId] = {
-				tick = ..time.tick();
-			}
-			return ..fiber.yield(); 
-		}
-		
-		var resume = function(requestId, ...){
-			if(requests[requestId]){
-				assert( ..fiber.resume(currentFiber, ...)); 
-				requests[requestId] = null;
-			}
-		}
-		
-		var checkTimeout = function(){
-			var now = ..time.tick();
-			for(id, info in requests){
-				if((now-info.tick)>this.timeout){
-    				resume(id, false, "timeout");
-				}
-			}
-		}
-		
-		var timer = ..win.timer(null, this.checkTimeoutInterval);
-		timer.onTimer = function(){
-			if(!currentFiber) return ; 
-			if(..fiber.status(currentFiber) != ..fiber.status.suspended) return ;
-			checkTimeout()
-		}
-		timer.enable()
-		
+		var methodsOfListen = {};
+				
 		var doMsg = function(msg){
 			if(!msg){
 				return ; 
@@ -65,41 +34,55 @@ class dp{
 			// 请求回复
 			if(t.id){
 				if(t.error){
-					resume(t.id, null, t.error.message);
+					async.resume(t.id, null, t.error.message);
 				}
 				else {
-					resume(t.id, t.result);
+					async.resume(t.id, t.result);
 				}
 			} // 订阅事件
 			elseif(t.method){
-				resume(t.method, t.params)
+				async.resume(t.method, t.params)
 	
-				if(this[["onChromeEvent"]]){
-					this.onChromeEvent(t.method, t.params)
+				if(methodsOfListen[t.method]){
+					async.run(methodsOfListen[t.method], null, null, t.params)
 				}
+
 				
 				// 浏览器关闭
 				if(t.method == "Inspector.detached"){
 					chromePid = null;
-					currentFiber = null;
 				}
 			}	
 		}
 		
 
 		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
-		ws.on("open", lambda() resume("connectChrome", true));
-		ws.on("close", lambda() resume("connectChrome", false));
+		ws.on("open", lambda() async.resume("connectChrome", true));
+		ws.on("close", lambda() async.resume("connectChrome", false));
 		ws.on("message", doMsg)
+		
+		async.startCheckTimeout(9000, 200);
 		
 		..table.gc(this, "close");
 	};
+	setTimeout = function(timeout, interval){
+		async.timeout = timeout;
+		if(interval){
+			async.checkTimeoutInterval = interval;
+		}
+	};
 	close = function(){
-		this.closeChrome();
-		timer.disable();
+		this.killChrome();
+		async.close();
 		ws.close();
 	};
-	closeChrome = function(){
+	on = function(method, callback){
+		methodsOfListen[method] = callback;
+	};
+	run = function(func, onBegin, onEnd, ...){
+		return async.run(func, onBegin, onEnd, ...); 
+	};
+	killChrome = function(){
 		if(chromePid){
 			try{
 				..process.kill(chromePid);
@@ -107,16 +90,11 @@ class dp{
 			chromePid = null;
 		}
 	};
-	init = function(){
-		requests = {};
-		requestId = 0;
-		this.lastTaskDuration = 0;
-	};
 	waitEvent = function(name){
-		return yield(name); 
+		return async.await(name); 
 	};	
-	open = function(chromePath, headless=false, userDataDir, port, disableGpu=true){
-		this.closeChrome();
+	open = function(chromePath, headless=false, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
+		this.killChrome();
 		if(chromePath){
 			if(!..io.exist(chromePath)){
 				error(chromePath ++ " 文件不存在",2);
@@ -139,10 +117,6 @@ class dp{
 		if(userDataDir){
 			..table.push(cmd, "--user-data-dir=" ++ ..io.createDir(userDataDir))
 		}
-		else {
-		//	..table.push(cmd, "--user-data-dir=" ++ ..io.createDir("\chrome.remote.userdata"))
-		//	..table.push(cmd, "--disk-cache-size=0")
-		}
 			
 		if(disableGpu){
 			..table.push(cmd, "--disable-gpu");
@@ -162,9 +136,8 @@ class dp{
 		this.chromePort = port;
 		return true; 
 	};
-	getRemoteInfo = function(host, port, path){
+	getAvailableWebsocketTargets = function(host, port, path){
 		var url = "http://" ++ host ++ ":" ++ port ++ path;
-
 		var html, err, code = ..thread.invokeAndWait(
 			function(url){
 				import inet.whttp;
@@ -173,15 +146,16 @@ class dp{
 				whttp.setTimeouts(3000, 3000, 3000);
 				return whttp.get(url);
 			},
-			url);
-			
+			url
+		);
+	
 		if(!html){
 			return null, err, code; 
 		}
 		return ..web.json.parse(html);
 	};
 	getDebugPages = function(host, port){
-		var tab, err, code = this.getRemoteInfo(host, port, "/json");
+		var tab, err, code = this.getAvailableWebsocketTargets(host, port, "/json");
 		if(!tab){
 			return null, "网络连接有误，获取 debugPages 失败，原因：" ++ err; 
 		}
@@ -197,7 +171,7 @@ class dp{
 		}
 		return pages; 	
 	}
-	getDebuggerUrl = function(host, port){
+	getWebSocketDebuggerUrl = function(host, port){
 		var pages, err = this.getDebugPages(host, port);
 		if(!pages){
 			return null, err; 
@@ -208,36 +182,16 @@ class dp{
 		return pages[1].webSocketDebuggerUrl; 		
 	};	
 	connect = function(){
-		var url, err = this.getDebuggerUrl(this.chromeHost, this.chromePort);
+		var url, err = this.getWebSocketDebuggerUrl(this.chromeHost, this.chromePort);
 		if(!url){
 			return false, err; 
 		}
-		..io.print("url",url)
+
 		var ok, err = ws.connect(url);
 		if(!ok){
 			return null, "连接 chrome 失败，原因：" ++ err; 
 		}
 		return this.waitEvent("connectChrome"); 
-	};
-	run = function(func, ...){
-		this.init();
-		var fib, err = ..fiber.create(
-			function(...){
-				if this[["onTaskBegin"]] this.onTaskBegin();
-				
-				var tick = ..time.tick();
-				var ret = {func(...)};
-				this.lastTaskDuration = ..time.tick() - tick;
-				
-				if this[["onTaskEnd"]] this.onTaskEnd(..table.unpackArgs(ret));
-			}); 
-			
-		if(!fib){
-			return null, "创建 fiber 失败，原因：" ++  err; 
-		}
-		assert(..fiber.resume(fib, ...));
-		currentFiber = fib;
-		return true; 
 	};
 	send = function(method, params){
 		requestId++;
@@ -248,8 +202,8 @@ class dp{
 		);
 		var ok = ws.send(json);
 		if(!ok){
-			return false, "发送 ws 请求数据失败"; 
-		}
+			return false, "发送 ws 请求失败"; 
+		} 
 		return requestId; 
 	};
 	xcall = function(method, params){
@@ -257,15 +211,9 @@ class dp{
 		if(!requestId){
 			return null, err; 
 		}
-		return yield(requestId); 
+		return async.await(requestId); 
 	};
-	newTab = function(){	
-	};
-	activateTab = function(targetId){
-	};
-	closeTab = function(targetId){	
-	};
-	@_meta;	
+	@_meta;
 }
 namespace dp{
     namespace ..global{
@@ -275,20 +223,10 @@ namespace dp{
 
     _meta = {
     	_get = function(k){
-    		var tt = type(k)
-    		if(tt == type.string){
+    		if(type(k) == type.string){
     			if(owner[["method"]]){
     				k = owner[["method"]] ++ "." ++ k;  
     			}
-/*
-    			owner[[k]] = {
-    				xcall = owner.xcall;
-    				send = owner.send;
-    				method = k;
-    				@_meta;
-    			}
-    			return owner[[k]]; 
-*/
 				return	{
     				xcall = owner.xcall;
     				send = owner.send;
@@ -315,23 +253,16 @@ namespace dp{
 }
 // https://chromedevtools.github.io/devtools-protocol/
 /**intellisense(aaz.chrome)
-dp = 谷歌开发者工具协议辅助库
+dp = 谷歌开发者工具协议辅助库，特点是用纤程把异步回调转为同步调用
 dp() = 创建谷歌开发者工具协议辅助对象\n!cdp.
 end intellisense**/
 
 /**intellisense(!cdp)
-timeout = 设置单次请求超时，单位毫秒，默认 10000
+setTimeout(.(超时, 检查超时间隔) = 设置请求超时，单位毫秒，默认 10000\n参数@1：超时\n参数@2可选：检查超时的间隔，就是多长时间检测一次
 open(.(chrome exe路径, 是否无头模式, 临时目录, 端口, 是否禁用GPU) = 打开浏览器，所有参数可选，默认不开启无头模式\n\n注：要多开浏览器请指定不同的临时目录，否则同时只能运行一个
-connect() = 连接浏览器，成功返回 true， 失败返回 false，错误信息
-run(.(任务函数, 任务函数的不定参数) = 运行任务函数，参数@1为任务函数
+connect() = 连接浏览器\n成功返回 true\n失败返回 false，错误信息
+run(.(任务函数, 开始时回调函数, 结束时回调函数, 任务函数的不定参数) = 运行任务函数\n参数@1: 任务函数\n参数@2: 任务开始时触发的回调函数，可选\n参数@3: 任务结束时触发的回调函数, 可选\n参数@4: 任务的不定参数, 可选
 waitEvent("事件名字") = 等待指定事件到达，成功返回一个表
-lastTaskDuration = 最近一次任务的消耗时长，单位毫秒
-onTaskBegin = @.onTaskBegin = function(){
-    __/*该事件函数在任务开始时触发*/
-}
-onTaskEnd = @.onTaskEnd = function(...){
-    __/*该事件函数在任务结束时触发，任务返回值作为参数*/
-}
 Page = 与被检查页面相关的动作和事件都属于页面域\n!Page.
 Target = 支持发现更多的目标，并允许附加到他们身上\n!Target.
 Runtime = 运行时域通过远程评估和镜像对象来公开JavaScript运行时。\n评估结果以镜像对象的形式返回，该对象暴露了对象类型、字符串表示和唯一标识符，可用于进一步的对象引用。\n原始对象被保留在内存中，除非它们被显式释放或与它们对象组中的其他对象一起被释放。\n!Runtime.

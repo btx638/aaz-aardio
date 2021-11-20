@@ -2,7 +2,7 @@ import win.ui;
 /*DSG{{*/
 var winform = win.form(text="aardio form";right=385;bottom=140)
 winform.add(
-button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+btnRunTask={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
 )
 /*}}*/
 
@@ -15,30 +15,25 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 20000;
 
 // 接收事件
-cdp.onChromeEvent = function(method, params){
-	if(method == "Fetch.requestPaused"){
-		// 发现请求图片
-		if(params.resourceType == "Image"){
-			// 中止请求
-			// 使用 raw 属性可以不等待请求的返回值，立即返回
-			// 不是 raw 属性下的所有 Chrome DevTools Protocol 方法都要写在任务函数里面
-			cdp.raw.Fetch.failRequest(
-				requestId = params.requestId;
-				errorReason = "Aborted";
-			);
-		}
-		else {
-			// 继续其他的请求
-			cdp.raw.Fetch.continueRequest(
-				requestId = params.requestId;
-			);
-		}
+cdp.on("Fetch.requestPaused", function(params){
+	// 请求类型为图片就中止请求
+	if(params.resourceType == "Image"){
+		cdp.Fetch.failRequest(
+			requestId = params.requestId;
+			errorReason = "Aborted";
+		);
 	}
-}	
-
+	else {
+		// 继续其他的请求
+		cdp.Fetch.continueRequest(
+			requestId = params.requestId;
+		);
+	}
+})
+	
+// 任务函数
 var task = function(){
  	// 打开浏览器
 	var ok, err = cdp.open()
@@ -82,7 +77,15 @@ var task = function(){
     }
 }
 
-winform.button.oncommand = function(id,event){
+cdp.onTaskBegin = function(){
+    winform.btnRunTask.disabled = true
+}
+
+cdp.onTaskEnd = function(...){
+    winform.btnRunTask.disabled = false
+}
+
+winform.btnRunTask.oncommand = function(id,event){
 	io.print(cdp.run(task));
 }
 

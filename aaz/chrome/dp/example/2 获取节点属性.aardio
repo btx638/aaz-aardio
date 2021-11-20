@@ -68,6 +68,7 @@ var task = function(){
 		nodeId = document.root.nodeId;
 		selector = ".home-box-list .post-list .item-content h2 a";
 	)
+
     if(!doms){
         io.print("获取节点失败", err);
     	return ; 

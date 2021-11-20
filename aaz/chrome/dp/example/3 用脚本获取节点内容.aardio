@@ -21,7 +21,9 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
-cdp.timeout = 9000;
+
+// 设置每次请求的超时
+cdp.setTimeout(9000);
 
 var statusbar = win.ui.statusbar(winform);
 statusbar.addItem("运行状态：", 70);
@@ -69,14 +71,14 @@ var doFail = function(name, err){
 }
 
 // 任务开始时触发
-cdp.onTaskBegin = function(){
+var onTaskBegin = function(){
 	winform.button.disabled = true
 	currentTaskStepName = null;
 	uiInit();
 }
 
 // 任务结束时触发，可以接收任务函数的返回值
-cdp.onTaskEnd = function(result, err){
+var onTaskEnd = function(result, err){
 	winform.button.disabled = false
 	
 	if(!result){
@@ -84,14 +86,13 @@ cdp.onTaskEnd = function(result, err){
 		return ; 
 	}
 	
-	uiLog("任务完成，用时：" ++ cdp.lastTaskDuration ++ "毫秒")
+	uiLog("任务完成")
 	
 	// 读取结果
 	for(i=1;#result;1){
 		uiResult(result[i]);
 	}
 }
-
 
 var task = function(url, selector){
  	uiLogRunning("打开浏览器");
@@ -202,8 +203,10 @@ var task = function(url, selector){
 }
 
 winform.button.oncommand = function(id,event){
-	assert(cdp.run(task, winform.edUrl.text, winform.edSelector.text))
+	cdp.run(task, onTaskBegin,  onTaskEnd, winform.edUrl.text, winform.edSelector.text)
 }
+
+
 
 winform.show();
 win.loopMessage();

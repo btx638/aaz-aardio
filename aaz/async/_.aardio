@@ -1,0 +1,65 @@
+﻿import win.timer;
+
+namespace aaz;
+class async{
+	ctor(){
+		var requestIds = {};
+		var timer;
+
+		..table.gc(this, "close");
+	};
+	close = function(){
+		if(timer){
+			timer.disable();
+			timer = null;
+		}
+	};
+	await = function(id){
+		requestIds[id] = {
+			tick = ..time.tick();
+			fiber = ..fiber.current();
+		}
+		return ..fiber.yield();
+	};
+	resume = function(id, ...){
+		if(requestIds[id]){
+			assert( ..fiber.resume(requestIds[id].fiber, ...));
+			requestIds[id] = null;
+		}
+	};
+	run = function(func, onBegin, onEnd, ...){
+		var fib, err = ..fiber.create(
+			function(...){
+				if onBegin onBegin(...);
+				var ret = {func(...)};		
+				if onEnd onEnd(..table.unpackArgs(ret));
+			}
+		);
+		assert(fib, err)
+		assert(..fiber.resume(fib, ...));
+	};
+	startCheckTimeout = function(timeout, interval){
+		this.timeout = timeout;
+		this.checkTimeoutInterval = interval;
+		
+		timer = ..win.timer(null, this.checkTimeoutInterval);
+		timer.onTimer = function(){
+			if(!this.timeout){
+				return ; 
+			}
+			var tick = ..time.tick();
+			
+			for(id, info in requestIds){
+				if((tick - info.tick) > this.timeout){
+    				this.resume(id, false, "timeout");
+				}
+			}
+		}
+		timer.enable()
+	}		
+}
+namespace async{
+    
+    
+	
+}
