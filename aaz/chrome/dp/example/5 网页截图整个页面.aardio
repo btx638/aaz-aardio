@@ -8,7 +8,7 @@ static={cls="static";text="网址：";left=24;top=16;right=72;bottom=48;transpar
 )
 /*}}*/
 
-
+import console
 import crypt.bin
 import process
 import aaz.chrome.dp;
@@ -24,17 +24,45 @@ var task = function(url){
 	)
 	cdp.waitEvent( "Page.loadEventFired" );
 	
+
+	cdp.Emulation.setDeviceMetricsOverride(
+    	width =  1920;
+    	height =  1080;
+    	deviceScaleFactor = 0;
+    	mobile = false;
+    	fitWindow = false;
+	)
+	
+
+	cdp.Emulation.setVisibleSize( 
+		width = 1920;
+	 	height = 1080
+	 )
+	 
+	 cdp.Emulation.forceViewport(
+		x = 0;
+		y = 0;
+		scale = 1;
+	 );
+	 
+	 
+	
 	var rect = cdp.Page.getLayoutMetrics()
+	console.dumpTable(rect)
+	
 	var ret = cdp.Page.captureScreenshot(
 		format="jpeg";
 		captureBeyondViewport = true;
 		fromSurface = true;
+
 		clip = {
-			x = 0;y=0;
+			x = 0;
+			y = 0;
 			scale = 1;
 			width = rect.contentSize.width;
 			height = rect.contentSize.height;
 		}
+
 	)
 	if(ret){
 		return crypt.bin.decodeBase64(ret.data); 	
