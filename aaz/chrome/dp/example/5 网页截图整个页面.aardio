@@ -1,0 +1,70 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=759;bottom=469)
+winform.add(
+btnScreenshot={cls="button";text="截图";left=440;top=16;right=576;bottom=48;z=3};
+edUrl={cls="edit";text="https://www.163.com/";left=72;top=16;right=424;bottom=48;edge=1;z=2};
+static={cls="static";text="网址：";left=24;top=16;right=72;bottom=48;transparent=1;z=1}
+)
+/*}}*/
+
+
+import crypt.bin
+import process
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+
+var task = function(url){
+	cdp.open(null, true)
+    cdp.connect();
+	cdp.Page.enable();
+	cdp.Page.navigate(
+		url = url;
+	)
+	cdp.waitEvent( "Page.loadEventFired" );
+	
+	var rect = cdp.Page.getLayoutMetrics()
+	var ret = cdp.Page.captureScreenshot(
+		format="jpeg";
+		captureBeyondViewport = true;
+		fromSurface = true;
+		clip = {
+			x = 0;y=0;
+			scale = 1;
+			width = rect.contentSize.width;
+			height = rect.contentSize.height;
+		}
+	)
+	if(ret){
+		return crypt.bin.decodeBase64(ret.data); 	
+	}
+}
+
+winform.btnScreenshot.oncommand = function(id,event){
+	var url = winform.edUrl.text
+	if(!string.startWith(url, "http")){
+		winform.msgboxErr("请填写网址")
+		return ; 
+	}
+	
+	cdp.run(
+		task,
+		function(){
+			winform.btnScreenshot.disabled = true
+		},
+		function(data){
+			winform.btnScreenshot.disabled = false
+			if(data){
+				string.save("\截图.jpg", data)
+				process.exploreSelect("\截图.jpg")
+			}
+		}, 
+		url
+	)
+}
+
+
+winform.show();
+win.loopMessage();
+return winform;
