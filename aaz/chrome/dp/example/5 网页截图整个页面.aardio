@@ -1,18 +1,19 @@
 import win.ui;
 /*DSG{{*/
-var winform = win.form(text="aardio form";right=759;bottom=469)
+var winform = win.form(text="aardio form";right=623;bottom=103)
 winform.add(
 btnScreenshot={cls="button";text="截图";left=440;top=16;right=576;bottom=48;z=3};
-edUrl={cls="edit";text="https://www.163.com/";left=72;top=16;right=424;bottom=48;edge=1;z=2};
+edUrl={cls="edit";text="https://www.taobao.com/";left=72;top=16;right=424;bottom=48;edge=1;z=2};
 static={cls="static";text="网址：";left=24;top=16;right=72;bottom=48;transparent=1;z=1}
 )
 /*}}*/
 
 // https://dschnurr.medium.com/using-headless-chrome-as-an-automated-screenshot-tool-4b07dffba79a
+// https://blog.csdn.net/z69183787/article/details/91984005
 // https://dev.to/gdledsan/selenium-4-and-chrome-driver-take-full-page-screenthos-2j8d
 // https://github.com/puppeteer/puppeteer/blob/main/src/common/Page.ts#L2741
 
-import console
+
 import crypt.bin
 import process
 import aaz.chrome.dp;
@@ -20,7 +21,7 @@ import aaz.chrome.dp;
 var cdp, err = aaz.chrome.dp()
 
 var task = function(url){
-	cdp.open(null, true)
+	cdp.open(,null)
     cdp.connect();
 	cdp.Page.enable();
 	cdp.Page.navigate(
@@ -28,37 +29,34 @@ var task = function(url){
 	)
 	cdp.waitEvent( "Page.loadEventFired" );
 	
-
-/*
-	cdp.Emulation.setDeviceMetricsOverride(
-    	width =  1920;
-    	height =  1080;
-    	deviceScaleFactor = 0;
-    	mobile = false;
-    	fitWindow = false;
-	)
+	// 滚动页面
+  	var totalHeight = 0;
+  	var distance = 100;
+  	while(win.delay(100)){
+		cdp.Runtime.evaluate(
+			expression = string.format(" window.scrollBy(0, %s);", distance);
+		)
+		totalHeight += distance;
+		var ret = cdp.Runtime.evaluate(
+			expression = "document.body.scrollHeight";
+			returnByValue = true;
+		)
+		if(!ret){
+			return ; 
+		}
+        if (totalHeight >= ret.result.value) {
+          break;
+        }
+  	}
+  	
 	
 
-	cdp.Emulation.setVisibleSize( 
-		width = 1920;
-	 	height = 1080
-	 )
-	 
-	 cdp.Emulation.forceViewport(
-		x = 0;
-		y = 0;
-		scale = 1;
-	 );
-*/
-	 
-	 
-	
+		
 	var rect = cdp.Page.getLayoutMetrics()
 	
 	var ret = cdp.Page.captureScreenshot(
 		format="jpeg";
 		captureBeyondViewport = true;
-		//fromSurface = true;
 
 		clip = {
 			x = 0;
