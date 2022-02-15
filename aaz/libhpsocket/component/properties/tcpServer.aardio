@@ -1,0 +1,73 @@
+﻿import aaz.libhpsocket.component.properties.server;
+
+namespace aaz.libhpsocket.component.properties.tcpServer;
+..table.mix(self, ..aaz.libhpsocket.component.properties.server);
+
+var _dll = ..aaz.libhpsocket._dll;
+
+sendSmallFile = function(connId,filename,head,tail){
+	if( head ) head ={ INT len=#head;ptr head = head }
+	if( tail ) tail ={ INT len=#tail;ptr tail = tail }
+	
+	return 	_dll.HP_TcpServer_SendSmallFile(owner.pServer, connId, ..io.fullpath(filename), head, tail);
+}
+
+socketListenQueue = {
+    _get = function(){
+    	return _dll.HP_TcpServer_GetSocketListenQueue(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetSocketListenQueue(owner.pServer, v);
+    } 
+}
+
+acceptSocketCount = {
+    _get = function(){
+    	return _dll.HP_TcpServer_GetAcceptSocketCount(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetAcceptSocketCount(owner.pServer, v);
+    } 
+}
+
+socketBufferSize = {
+    _get = function(){
+    	return _dll.HP_TcpServer_GetSocketBufferSize(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetSocketBufferSize(owner.pServer, v);
+    } 
+}
+
+keepAliveTime = {
+    _get = function(){
+    	return _dll.HP_TcpServer_GetKeepAliveTime(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetKeepAliveTime(owner.pServer, v);
+    } 
+}
+
+keepAliveInterval = {
+    _get = function(){
+    	return _dll.HP_TcpServer_GetKeepAliveInterval(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetKeepAliveInterval(owner.pServer, v);
+    } 
+}
+
+noDelay = {
+    _get = function(){
+    	return _dll.HP_TcpServer_IsNoDelay(owner.pServer);
+    }
+    
+    _set = function(v){
+    	_dll.HP_TcpServer_SetNoDelay(owner.pServer, v);
+    }     
+}

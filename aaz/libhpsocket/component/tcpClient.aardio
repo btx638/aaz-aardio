@@ -1,0 +1,28 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.component.properties.tcpClient;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component;
+class tcpClient{
+	ctor(listener, pClient){
+		if(pClient){
+			this.pClient = pClient;
+		}
+		elseif(listener){
+			this.pClient = _dll.Create_HP_TcpClientP(listener);
+			..table.gc(this, "destroy");
+		}
+		else {
+			error("请指定参数@1 pClient 或参数@2 pListener", 2);
+		}
+	};	
+	destroy = function(){
+		if(this.pClient){
+			_dll.Destroy_HP_TcpClient(this.pClient);
+			this.pClient = null;
+		}
+	};	
+	@_metaProperty;
+}
+tcpClient._metaProperty = ..util.metaProperty(..aaz.libhpsocket.component.properties.tcpClient);

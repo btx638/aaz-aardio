@@ -1,0 +1,17 @@
+﻿import aaz.libhpsocket.listener.server;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.listener;
+class tcpServer{
+	ctor(){
+		this = ..aaz.libhpsocket.listener.server("component.tcpServer");
+		this.pListener = _dll.Create_HP_TcpServerListenerP();
+	};
+	destroy = function(){
+		if(this.pListener){
+			_dll.Destroy_HP_TcpServerListener(this.pListener);
+			this.pListener = null;
+		}
+	};
+}

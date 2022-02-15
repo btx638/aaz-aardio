@@ -1,0 +1,110 @@
+﻿import aaz.libhpsocket.component.properties.udpServer;
+
+namespace aaz.libhpsocket.component.properties.udpArqServer;
+..table.mix(self, ..aaz.libhpsocket.component.properties.udpServer);
+
+var _dll = ..aaz.libhpsocket._dll;
+
+getWaitingSendMessageCount = function(connID){
+	var count = {int v}
+	return _dll.HP_UdpArqServer_GetWaitingSendMessageCount(owner.pServer, connID, count), count.v; 
+}
+
+isNoDelay = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_IsNoDelayB(owner.pServer);
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetNoDelay(owner.pServer, v);
+    } 	
+}
+
+isTurnoffCongestCtrl = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_IsTurnoffCongestCtrlB(owner.pServer);
+    } 
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetTurnoffCongestCtrl(owner.pServer, v);
+    } 	
+}
+
+flushInterval = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetFlushInterval(owner.pServer);
+    }    
+    _set = function( v ){
+    	_dll.HP_UdpArqServer_SetFlushInterval(owner.pServer, v);
+    } 	
+}
+
+resendByAcks = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetResendByAcks(owner.pServer);
+    }   
+    _set = function(v ){
+    	_dll.HP_UdpArqServer_SetResendByAcks(owner.pServer, v);
+    } 	
+}
+
+sendWndSize = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetSendWndSize( owner.pServer);
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetSendWndSize(owner.pServer, v);
+    } 	
+}
+
+recvWndSize = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetRecvWndSize(owner.pServer);
+    }  
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetRecvWndSize(owner.pServer, v);
+    } 	
+}
+
+setMinRto = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetMinRto( owner.pServer );
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetMinRto(owner.pServer, v);
+    } 	
+}
+
+fastLimit = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetFastLimit(owner.pServer);
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetFastLimit(owner.pServer, v);
+    } 	
+}
+
+maxTransUnit = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetMaxTransUnit(owner.pServer);
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetMaxTransUnit(owner.pServer, v);
+    } 	
+}
+
+maxTransUnit = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetMaxMessageSize(owner.pServer);
+    }  
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetMaxMessageSize(owner.pServer, v);
+    } 	
+}
+
+maxTransUnit = {
+    _get = function(){ 
+    	return _dll.HP_UdpArqServer_GetHandShakeTimeout(owner.pServer);
+    }   
+    _set = function(v){
+    	_dll.HP_UdpArqServer_SetHandShakeTimeout(owner.pServer, v);
+    } 	
+}

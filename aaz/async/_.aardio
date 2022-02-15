@@ -27,12 +27,12 @@ class async{
 			requestIds[id] = null;
 		}
 	};
-	run = function(func, onBegin, onEnd, ...){
+	run = function(func, onStart, onComplete, ...){
 		var fib, err = ..fiber.create(
 			function(...){
-				if onBegin onBegin(...);
+				if (onStart) onStart(...);
 				var ret = {func(...)};		
-				if onEnd onEnd(..table.unpackArgs(ret));
+				if (onComplete) onComplete(..table.unpackArgs(ret));
 			}
 		);
 		assert(fib, err)

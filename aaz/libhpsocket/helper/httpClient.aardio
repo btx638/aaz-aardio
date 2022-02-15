@@ -1,0 +1,79 @@
+﻿import aaz.libhpsocket.helper.websocket;
+import aaz.libhpsocket.helper.client;
+
+namespace aaz.libhpsocket.helper.httpClient;
+..table.mix(self, ..aaz.libhpsocket.helper.client);
+
+var wsHelper = ..aaz.libhpsocket.helper.websocket;
+
+var defaultSaveWsUpgradeRequestKey = function(component, key){
+	self.reallocString(component, #key);
+	self.appendString(component, key, #key)
+}
+
+var defaultGetWsUpgradeRequestKey = function(component){
+	var requestKey = self.getString(component); 
+	self.reallocString(component, 0);
+	return requestKey; 
+}
+
+getUrlHost = function(component){
+	var ip, port = component.getRemoteHost();
+	if(!(ip&&port) ) return;
+	if(ip=="0.0.0.0") ip = "localhost";
+	return ..string.format("%s:%d", ip, port); 
+}
+
+getUrl = function(component, path, scheme="http"){
+	var host = self.getUrlHost(component);
+	if(!host) return;
+	var url =  ..string.format("%s://%s", scheme, host); 
+	if(path){
+		path = ..string.replace(path,"\\","/");
+		if(path[1]!='/'#) path= "/" + path;
+		return url ++ path;
+	}
+	return url;
+}
+
+getWsUrl = function(path){
+	return self.getUrl(path, "ws");
+}
+
+getWssUrl = function(path){
+	return self.getUrl(path, "wss");
+}
+
+sendWsUpgradeRequest = function(component, path="/", baseHeaders, saveWsUpgradeRequestKey){
+	saveWsUpgradeRequestKey := defaultSaveWsUpgradeRequestKey;
+	
+	var host = self.getUrlHost(component);
+	var origin = self.getUrl(component, path);
+	var headers, clientKey = wsHelper.genClientHeaders(host, origin, baseHeaders);
+	
+	if(component.sendGet(path, headers)){
+		saveWsUpgradeRequestKey(component, clientKey);
+		return true; 
+	}
+}
+
+checkWsUpgradeResponse = function(component, getWsUpgradeRequestKey){
+	getWsUpgradeRequestKey := defaultGetWsUpgradeRequestKey;
+	
+	var serverKey = component.getHeader("Sec-WebSocket-Accept");
+	if(!serverKey){
+		return false, "响应头缺少 Sec-WebSocket-Accept"; 
+	} 
+	
+	var clientKey = getWsUpgradeRequestKey(component);
+	if(wsHelper.verifyKey(clientKey, serverKey)){
+		 return true;
+	}
+	else {
+		return false, "clientKey 与 serverKey 不匹配";
+	}	
+}
+
+sendWsPong = function(component, mask){
+	return component.sendWsMessage(null, 0xA, mask);
+}

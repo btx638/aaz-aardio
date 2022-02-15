@@ -1,0 +1,28 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.ssl.component.properties.tcpPullServer;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.ssl.component;
+class tcpPullServer{
+	ctor(listener, pServer){
+		if(pServer){
+			this.pServer = pServer;
+		}
+		elseif(listener){
+			this.pServer = _dll.Create_HP_SSLPullServerP(listener);
+			..table.gc( this, "destroy" );
+		}
+		else {
+			error( "请指定参数1 pServer 或参数2 pListener", 2);
+		}
+	};	
+	destroy = function(){
+		if(this.pServer){
+			_dll.Destroy_HP_SSLPullServer(this.pServer);
+			this.pServer = null;
+		}
+	};	
+	@_metaProperty;
+}
+tcpPullServer._metaProperty = ..util.metaProperty(..aaz.libhpsocket.ssl.component.properties.tcpPullServer);

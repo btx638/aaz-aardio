@@ -1,0 +1,77 @@
+﻿import aaz.libhpsocket;
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component.properties.threadPool;
+createTaskObj = function(taskProc, pSender, connId, buffer, bufferLen, buffType, wParam, lParam){
+	return _dll.Create_HP_SocketTaskObjP(taskProc, pSender, connId, buffer, bufferLen, buffType, wParam, lParam);
+}
+
+destroyTaskObj = function(task){
+	_dll.Destroy_HP_SocketTaskObj(task);
+}
+
+start = function(threadCount=0, maxQueueSize=0, rejectedPolicy=0/*_TRP_CALL_FAIL*/, stackSize=0){	
+	return _dll.HP_ThreadPool_StartB(owner.pThreadPool, threadCount, maxQueueSize, rejectedPolicy, stackSize); 
+}
+
+stop = function(maxWait=0xFFFFFFFF/*_INFINITE*/){	
+	return _dll.HP_ThreadPool_StopB(owner.pThreadPool, maxWait); 
+}
+
+submit = function(taskProc, arg, maxWait=0xFFFFFFFF/*_INFINITE*/){	
+	return _dll.HP_ThreadPool_SubmitB(owner.pThreadPool, taskProc, arg, maxWait);
+}
+
+submitTask = function(task, maxWait=0xFFFFFFFF/*_INFINITE*/){	
+	return _dll.HP_ThreadPool_Submit_TaskB(owner.pThreadPool, task, maxWait);
+}
+
+adjustThreadCount = function(newThreadCount=0){	
+	return _dll.HP_ThreadPool_AdjustThreadCountB(owner.pThreadPool, newThreadCount); 	
+}
+
+wait = function(milliseconds=-1){
+	return _dll.HP_ThreadPool_WaitB(owner.pThreadPool, milliseconds); 
+}
+
+hasStarted = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_HasStartedB(owner.pThreadPool); 
+    }	
+}
+
+state = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetState(owner.pThreadPool); 
+    }	
+}
+
+queueSize = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetQueueSize(owner.pThreadPool); 
+    }	
+}
+
+taskCount = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetTaskCount(owner.pThreadPool); 
+    }	
+}
+
+threadCount = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetThreadCount(owner.pThreadPool); 
+    }	
+}
+
+maxQueueSize = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetMaxQueueSize(owner.pThreadPool); 
+    }	
+}
+
+rejectedPolicy = {
+    _get = function(){ 
+    	return _dll.HP_ThreadPool_GetRejectedPolicy(owner.pThreadPool); 
+    }	
+}

@@ -1,0 +1,18 @@
+﻿import aaz.libhpsocket.app.simpleWebsocketClient.ws;
+import aaz.libhpsocket.app.wsNodeClient.base;
+
+namespace aaz.libhpsocket.app.wsNodeClient;
+class ws{
+	ctor(){
+		var client = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
+		this = ..aaz.libhpsocket.app.wsNodeClient.base(client);
+	};	
+}
+namespace ws{
+    simple = function(){
+    	
+    }
+    
+    
+	
+}

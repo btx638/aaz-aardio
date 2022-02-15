@@ -1,0 +1,83 @@
+﻿import aaz.libhpsocket.helper.httpClient;
+import aaz.libhpsocket.app.simpleWebsocketClient.userdata;
+
+namespace aaz.libhpsocket.app.simpleWebsocketClient.clientHelper;
+
+var readUserdata = function(component){
+	var userdata = ..aaz.libhpsocket.app.simpleWebsocketClient.userdata();
+	userdata.extra = component.extra;
+	
+	return userdata;	
+}
+
+newExtra = function(wsPath, origin){
+	var userdata = ..aaz.libhpsocket.app.simpleWebsocketClient.userdata(wsPath, origin);
+	return userdata.newExtra();
+}
+
+var freeExtra = function(component){
+	var data = readUserdata(component);
+	data.free();
+	data.extra = null;
+	
+	component.extra = null;	
+}
+
+var getWsUpgradeRequestKey = function(component){
+    return readUserdata(component).wsKey;; 
+}
+
+var saveWsUpgradeRequestKey = function(component, wsKey){
+	var userdata = readUserdata(component);
+	userdata.wsKey = wsKey;
+	userdata.updateExtra();
+}
+
+sendWsUpgradeRequest = function(component){
+	var userdata = readUserdata(component);
+	var wsPath = userdata.wsPath;
+	var baseHeaders;
+	var origin = userdata.origin;
+	if(origin){
+		baseHeaders = {
+			["Origin"] = origin;
+		}
+	}
+	return ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(component, wsPath, baseHeaders, saveWsUpgradeRequestKey);
+}
+
+checkWsUpgradeResponse = function(component){
+	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(component, getWsUpgradeRequestKey);
+}
+
+onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+	if opCode == 0x9 /*Ping*/ return ; 
+	
+	var userdata = readUserdata(component);
+	userdata.buildWsMsg(bodyLen);
+	userdata.updateExtra();
+}
+
+onWsMessageBody = function(component, pData, len){
+	if(!component.extra) return ;
+	
+	var userdata = readUserdata(component);
+	userdata.concatWsMsg(pData, len);
+	userdata.updateExtra();
+}
+
+onWsMessageComplete = function(component){
+	var wsState = component.getWsMessageState();
+	if(wsState[["opCode"]] == 0x9 /*Ping*/){
+		..aaz.libhpsocket.helper.httpClient.sendWsPong(component);
+		return ; 
+	}
+	
+	if(!component.extra) return ; 
+	var userdata = readUserdata(component);
+	return userdata.getWsMsgString();
+}
+
+onClose = function(component){
+	freeExtra(component)
+}

@@ -1,0 +1,95 @@
+﻿import thread.command;
+
+namespace aaz.libhpsocket.app.simpleWebsocketServer;
+class base{
+	ctor(listener, component){
+				
+		listener.onThreadCreated = function(sessionId){
+			import thread.command;
+			import aaz.libhpsocket.app.simpleWebsocketServer.helper;
+
+			_serverHelper = aaz.libhpsocket.app.simpleWebsocketServer.helper;
+			_postUi = function(name, ...){
+				return thread.command.post(sessionId ++ name, ...);
+			}
+		}
+		
+		listener.onHandShake = function(component, connId){
+			_serverHelper.onHandShake(component, connId);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			if(upgradeType !== 1){
+				_postUi("error", connId, "客户端的升级类型不正确")
+				return 2; 
+			}
+			if( !_serverHelper.sendWsSwitchingProtocols(component, connId) ){
+				_postUi("error", connId, "切换协议消息发动失败");
+				return 2; 
+			}
+		}
+		
+		listener.onWsMessageHeader = function(component, connId, final, reserved, opcode, mask, bodyLen){
+			// https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
+			// 是否为消息的最后一个片段
+			if(!final){
+				_postUi("error", connId, "客户端的消息不是完整片段")
+				return 2; 
+			}
+			// 客户端主动断开时发送的 opcode 0x8 表示关闭 ，原因在数据里面2个字节
+			// 原因：
+			// 1. 主动关闭
+			// 2. 收到的帧过大
+			// 3. 收到的帧不符合期望的格式
+			if(opcode == 8){
+				_postUi("error", connId, "客户端主动断开连接")
+				return 2; 
+			}
+			_serverHelper.onWsMessageHeader(component, connId, final, reserved, opcode, mask, bodyLen);
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){ 
+			_serverHelper.onWsMessageBody(component, connId, pData, len);
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			var msg = _serverHelper.onWsMessageComplete(component, connId);
+			if(msg){
+				_postUi("message", connId, msg)
+			}
+		}
+		
+		listener.onClose = function(component, connId, operation, errorCode){
+			_serverHelper.onClose(component, connId, operation, errorCode);
+			_postUi("close", connId)
+		}
+	
+		var _thCmd = ..thread.command();
+		..table.gc(this, "close");
+	};
+	close = function(){
+		component.destroy();
+		listener.destroy();
+	};
+	stop = function(){
+		return component.stop();; 
+	};
+	start = function(port){
+		if(!component.start(, port)){
+			return null, "组件启动失败"; 
+		}
+		return true; 
+	};
+	send = function(connId, data){
+		return component.sendWsMessage(connId, data);
+	};
+	on = function(name, callback){
+		_thCmd[listener._sessionId ++ name] = callback;
+	};	
+}
+namespace base{
+    setListener = function(listener){
+    	
+    }   	
+}
+

@@ -1,0 +1,32 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="ws node client 1";right=759;bottom=469)
+winform.add(
+button={cls="button";text="Button";left=352;top=392;right=472;bottom=432;z=2};
+edit={cls="edit";text="Edit";left=96;top=56;right=624;bottom=352;edge=1;multiline=1;z=1}
+)
+/*}}*/
+
+
+import aaz.libhpsocket.app.wsNodeClient.ws;
+
+
+var client = aaz.libhpsocket.app.wsNodeClient.ws()
+
+client.on("open", function(){
+	client.register("client1")
+})
+
+client.on("normal", function(data){
+	winform.edit.log( "来自 client2 的消息" ++ table.tostring(data), '\r\n' )
+})
+
+client.connect("ws://127.0.0.1:10001")
+
+
+winform.button.oncommand = function(id,event){
+	client.sendTo("client2", "来自 client1 的消息")
+}
+
+winform.show();
+win.loopMessage();

@@ -1,0 +1,81 @@
+﻿import web.json;
+import win.ui;
+
+namespace aaz.libhpsocket.app.wsNodeClient;
+class base{
+	ctor(wsClient){
+
+		this._wsClient = wsClient;
+		this.eventCallback = {};
+		this.autoRetry = false;
+		this.checkInterval = 2000;
+		
+		var _translateMessage = function(msg){
+			var tab = ..web.json.parse(msg);
+			if(this.eventCallback[tab.type]){
+				this.eventCallback[tab.type](tab.data)
+			}
+		}
+		
+		var _beginTranslateMessage = function(msg){
+			if(this.eventCallback["message"]){
+				this.eventCallback["message"](msg);
+			}
+			_translateMessage(msg);
+		}
+		
+		this._wsClient.on("message", _beginTranslateMessage)
+	};
+	close = function(){
+	//	this._form.close()
+		this._wsClient.close()
+	}
+	startAutoRetry = function(){
+		this.autoRetry = true;
+		wsClient._form.setInterval(   
+			function(){
+				if(this.autoRetry ? this.url ? this._wsClient.isDisconnect()){
+					this.connect(this.url);
+				}
+				return this.checkInterval; 
+			},this.checkInterval 
+		)
+	};
+	sendJson = function(msg){
+		var json = ..web.json.stringify(msg)
+		return this._wsClient.send(json);
+	};
+	register = function(name){
+		return this.sendJson(
+			type = "register";
+			name = name;
+		);
+	};
+	sendTo = function(name, data){
+		return this.sendJson(
+			type = "normal";
+			name = name;
+			data = data;
+		);
+	};
+	connect = function(url){
+		this.url = url;
+		return this._wsClient.connect(url); 
+	};
+	on = function(name, callback){
+		if(_socketEvent[name]){
+			this._wsClient.on(name, callback);
+			return ; 
+		}
+		this.eventCallback[name] = callback;
+	}	
+}
+namespace base{
+	_socketEvent = {
+    	open = 1;
+    	close = 1;
+    	error = 1;
+   // 	message = 1;
+ 	} 	
+}
+

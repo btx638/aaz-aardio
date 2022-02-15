@@ -1,0 +1,243 @@
+﻿import aaz.libhpsocket.helper.headers;
+import aaz.libhpsocket.helper.websocket;
+import aaz.libhpsocket.helper.cookie;
+import aaz.libhpsocket.component.properties.tcpServer;
+
+namespace aaz.libhpsocket.component.properties.httpServer;
+..table.mix(self, ..aaz.libhpsocket.component.properties.tcpServer);
+
+var _dll = ..aaz.libhpsocket._dll;
+var realloc = ..raw.realloc;
+
+sendResponse = function(connId, body, headers, statusCode=200, desc){
+	headers = ..aaz.libhpsocket.helper.headers(headers);
+	return _dll.HP_HttpServer_SendResponseB(
+				owner.pServer, 
+				connId, 
+				statusCode, 
+				desc, 
+				headers.struct(), 
+				headers.length(), 
+				body, 
+				#body);
+}
+
+sendLocalFile = function(connId, filename, statusCode=200, desc, headers){
+	headers = ..aaz.libhpsocket.helper.headers(headers)
+	return _dll.HP_HttpServer_SendLocalFileB(
+				owner.pServer,
+				connId,
+				..io.fullpath(filename),
+				statusCode,
+				desc,
+				headers,
+				headers.length());
+}
+
+sendChunkData = function(connID, pData, len=0, extensions){
+	return _dll.HP_HttpServer_SendChunkDataB(connID, pData, len, extensions); 
+}
+
+sendWsMessage = function(connId, data, opCode, final=true, bodyLen=0, reserved){
+	var len = 0;
+	if(data[["_struct"]]){
+		len = ..raw.sizeof(data);
+		opCode = 2;
+	}
+	elseif(type(data) == type.string){
+		len = #data;
+		opCode = 1;
+	}
+
+	if(data) data = realloc(len, null, data); 
+	
+	var ret = _dll.HP_HttpServer_SendWSMessageB( 
+					owner.pServer, 
+					connId, 
+					final, 
+					reserved, 
+					opCode, 
+					data, 
+					len, 
+					..math.size64(len + bodyLen));
+    if(data) data = realloc(0, data);
+	return ret;
+}
+
+release = function(connId){
+	return _dll.HP_HttpServer_ReleaseB(owner.pServer, connId);
+}
+
+getUrlFieldSet = function(connId){
+	return 0xFFFF & _dll.HP_HttpServer_GetUrlFieldSet(owner.pServer, connId);
+} 
+
+getUrlField = function(connId, field){
+	var p = _dll.HP_HttpServer_GetUrlFieldP(owner.pServer, connId, field);
+	if(p) return ..raw.str(p);
+}
+
+getMethod = function(connId){
+	var p = _dll.HP_HttpServer_GetMethodP(owner.pServer, connId);
+	if(p) return ..raw.str(p);
+}
+
+getRequestUri = function(connId){	
+	var fileds = _dll.HP_HttpServer_GetUrlFieldSet(owner.pServer, connId);
+	var uri = "/"
+	if(fileds & (1<<3) ) uri  = owner.getUrlField(connId,3/*HUF_PATH*/);
+	if(fileds & (1<<4) ) uri  = uri + "?" + owner.getUrlField(connId,4/*HUF_QUERY*/);
+	return uri;
+}
+
+isUpgrade = function(connId){
+	return _dll.HP_HttpServer_IsUpgradeB(owner.pServer, connId);
+}
+
+isKeepAlive = function(connId){
+	return _dll.HP_HttpServer_IsKeepAliveB(owner.pServer, connId);
+}
+
+getVersion = function(){
+	return 0xFFFF & _dll.HP_HttpServer_GetVersion(owner.pServer);
+}
+
+getHost = function(connId){
+	var p = _dll.HP_HttpServer_GetHostP(owner.pServer, connId);
+	if(p) return ..raw.str(p);
+}
+
+getContentLength = function(connId){
+	return _dll.HP_HttpServer_GetContentLengthL(owner.pServer,connId);
+}
+
+getContentType = function(connId){
+	var p = _dll.HP_HttpServer_GetContentTypeP(owner.pServer,connId);
+	if(p) return ..raw.str(p);
+}
+
+getContentEncoding = function(connId){
+	var p = _dll.HP_HttpServer_GetContentEncodingP(owner.pServer,connId);
+	if(p) return ..raw.str(p);
+}
+
+getTransferEncoding = function(connId){
+	var p = _dll.HP_HttpServer_GetTransferEncodingP(owner.pServer,connId);
+	if(p) return ..raw.str(p);
+}
+
+getUpgradeType = function(connId){
+	return  _dll.HP_HttpServer_GetUpgradeType(owner.pServer, connId);
+}
+
+getParseErrorCode = function(connId){
+	var errdesc= {string value};
+	var errno = 0xFFFF & _dll.HP_HttpServer_GetParseErrorCode(owner.pServer, connId, errdesc);
+	return errno, errdesc.value;
+}
+
+getHeader = function(connId, name){
+	var value = {string value};
+	_dll.HP_HttpServer_GetHeaderB(owner.pServer, connId, name, value);
+	return value.value;
+}
+
+getHeaders = function(connId, name){
+	var values = {string array[] = {INT length} };
+	
+	_dll.HP_HttpServer_GetHeaders( owner.pServer, connId, name, null, values.array);
+	if( values.array.length == 0 ){
+		return null; 
+	}
+	
+	_dll.HP_HttpServer_GetHeadersB( owner.pServer, connId, name, values, values.array);
+	return values.array;
+}
+
+getAllHeaders = function(connId){
+	var headers = ..aaz.libhpsocket.helper.headers(); 
+	
+	_dll.HP_HttpServer_GetAllHeaders(owner.pServer, connId, null, headers.array);
+	if(headers.array.length == 0){
+		return null; 
+	}
+	
+	_dll.HP_HttpServer_GetAllHeaders(owner.pServer, connId, headers.struct(), headers.array);
+	return headers.array;
+}
+
+getAllHeaderNames = function(connId){
+	var names = { string array[] = {INT length} };
+	_dll.HP_HttpServer_GetAllHeaderNames(owner.pServer, connId, null, names.array);
+	if( names.array.length == 0 ){
+		return null; 
+	}
+	
+	_dll.HP_HttpServer_GetAllHeaderNames(owner.pServer, connId, names, names.array);
+	return names.array;
+}
+
+getCookie = function(connId, name){
+	var cookie = {string value};
+	_dll.HP_HttpServer_GetCookie(owner.pServer,connId,name,cookie);
+	return cookie.value;
+}
+
+getAllCookies = function(connId){
+	var cookies = ..aaz.libhpsocket.helper.cookie();
+	
+	_dll.HP_HttpServer_GetAllCookies(owner.pServer,connId, null, cookies.array);
+	if(cookies.array.length == 0){
+		return null; 
+	}
+	
+	_dll.HP_HttpServer_GetAllCookies(owner.pServer, connId, cookies, cookies.array);
+	return cookies.array;
+}
+
+getWsMessageState = function(connId){
+	var final = {bool value}
+	var reserved = {BYTE value}
+	var opCode = {BYTE value}
+	var mask = {INT value}
+	var bodyLen = {LONG value}
+	var bodyRemain = {LONG value} 
+	
+	if(_dll.HP_HttpServer_GetWSMessageState(owner.pServer, connId, final, reserved, opCode, mask, bodyLen, bodyRemain)){
+		return{
+			final = final.value;
+			reserved = reserved.value;
+			opCode = opCode.value;
+			mask = mask.value;
+			bodyLen = bodyLen.value;
+			bodyRemain = bodyRemain.value;
+		}
+	}
+}
+
+releaseDelay = {
+    _get = function(){
+    	return _dll.HP_HttpServer_GetReleaseDelay(owner.pServer); 
+    }   
+    _set = function(v){
+    	_dll.HP_HttpServer_SetReleaseDelay(owner.pServer, v);
+    } 
+} 
+
+localVersion = {
+    _get = function(){
+    	return _dll.HP_HttpServer_GetLocalVersion(owner.pServer); 
+    }   
+    _set = function(v){
+    	_dll.HP_HttpServer_SetLocalVersion(owner.pServer, v);
+    } 
+}
+
+isHttpAutoStart = {
+    _get = function(){
+    	return _dll.HP_HttpServer_IsHttpAutoStartB(owner.pServer); 
+    }  
+    _set = function(v){
+    	_dll.HP_HttpServer_SetHttpAutoStart(owner.pServer, v);
+    } 
+}	

@@ -1,0 +1,83 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.listener;
+import aaz.libhpsocket.listener.properties.httpClient;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.listener;
+class httpClient{
+	ctor(){
+		this = ..aaz.libhpsocket.listener("component.httpClient");
+		this.pListener = _dll.Create_HP_HttpClientListenerP()
+	};	
+	destroy = function(){
+		if(this.pListener){
+			_dll.Destroy_HP_HttpClientListener(this.pListener);
+			this.pListener = null;
+		}
+	};	
+	@_metaProperty;
+}
+httpClient._metaProperty = ..util.metaProperty(..aaz.libhpsocket.listener.properties.httpClient);
+
+/**intellisense(aaz.libhpsocket.listener)
+httpClient = http client 监听器类
+httpClient() = 创建 http client 监听器\n!httpClient.
+end intellisense**/
+
+/**intellisense(!httpClient)
+onThreadCreated = @.onThreadCreated = function(sessionId){
+	__/*工作线程创建时触发*/
+}
+onPrepareConnect = @.onPrepareConnect = function(component, connId, soListen){
+	__/*准备连接事件*/
+}
+onConnect = @.onConnect = function(component, connId){
+	__/*完成连接事件*/
+}
+onHandShake = @.onHandShake = function(component, connId){
+	__/*握手完成事件*/
+}
+onMessageBegin = @.onMessageBegin = function(component, connId){
+	__/*开始解析事件*/
+}
+onStatusLine = @.onStatusLine = function(component, connId, statusCode, desc){
+	__/*状态行解析完成*/
+}
+onHeader = @.onHeader = function(component, connId, name, value){
+	__/*请求头事件*/
+}
+onHeadersComplete = @.onHeadersComplete = function(component, connId){
+	__/*请求头事件*/
+}
+onChunkHeader = @.onChunkHeader = function(component, connId, length){
+	__/*Chunked 报文头事件*/
+}
+onChunkComplete = @.onChunkComplete = function(component, connId){
+	__/*Chunked 报文结束事件*/
+}
+onBody = @.onBody = function(component, connId, pData, len){
+	__/*BODY 报文事件*/
+}
+onMessageComplete = @.onMessageComplete = function(component, connId){
+	__/*完成解析事件*/
+}
+onUpgrade = @.onUpgrade = function(component, connId, upgradeType){
+	__/*升级协议*/
+}
+onParseError = @.onParseError = function(component, connId, errorCode, errorDesc){
+	__/*解析错误*/
+}
+onWsMessageHeader = @.onWsMessageHeader = function(component, connId, final, reserved, operationCode, mask, bodyLen){
+	__/*Web Socket 数据包头*/
+}
+onWsMessageBody = @.onWsMessageBody = function(component, connId, data, len){
+	__/*Web Socket 数据包体*/
+}
+onWsMessageComplete = @.onWsMessageComplete = function(component, connId){
+	__/*Web Socket 数据包完成事件*/
+}
+onClose = @.onClose = function(component, connId){
+	__/*连接关闭事件*/
+}
+end intellisense**/

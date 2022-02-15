@@ -1,0 +1,181 @@
+﻿import aaz.libhpsocket;
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component.properties.client;
+_topointer = function(){
+    return owner.pClient; 
+}
+
+start = function(ip, port, async=true){
+	if(ip == "localhost") ip="127.0.0.1";
+	if(_dll.HP_Client_StartW(owner.pClient, ip, port, async)){
+		return true; 
+	}
+	return false, owner.lastError;
+}
+
+startWithBindAddress = function(remoteAddress, port, async=true, bindAddress){
+	if(_dll.HP_Client_StartWithBindAddressW(owner.pClient, remoteAddress, port, async, bindAddress)){
+		return true; 
+	}
+	return false, owner.lastError;
+}
+
+startWithBindAddressAndLocalPort = function(remoteAddress, port, async=true, bindAddress, localPort){
+	if(_dll.HP_Client_StartWithBindAddressAndLocalPortW(owner.pClient, remoteAddress, port, async, bindAddress, localPort)){
+		return true; 
+	}
+	return false, owner.lastError;
+}
+
+stop = function(){
+	if(_dll.HP_Client_StopB(owner.pClient)){
+		return true; 
+	}
+	return false, owner.lastError;
+}
+
+send = function(buffer, len){
+	if(type(len) == type.number){
+	}
+	elseif(buffer[["_struct"]]){
+		len = ..raw.sizeof(buffer);
+	}
+	elseif(type(buffer) == type.string){
+		len = #buffer;
+	}
+	return _dll.HP_Client_SendB(owner.pClient, buffer, len);
+}
+
+sendPart = function(buffer, length, offset=0){
+	return _dll.HP_Client_SendPartB(owner.pClient, buffer, length===null?#buffer:length, offset);
+}
+
+sendPackets = function(buffer, count){
+	return _dll.HP_Client_SendPacketsB(owner.pClient, buffer, count);
+}
+
+pauseReceive = function(pause){
+	return _dll.HP_Client_PauseReceiveB(owner.pClient, pause); 	
+}
+
+wait = function(milliseconds){
+	return _dll.HP_Client_WaitB(owner.pClient, milliseconds); 
+}
+
+getLocalAddress = function(){
+	var addr ={ WORD value[50] };
+	var addrlen = {int value=50 };
+	var port = { WORD value };
+	
+	if(_dll.HP_Client_GetLocalAddress(owner.pClient, addr, addrlen, port)){
+		return addr.value, port.value;
+	}	
+}
+
+getRemoteHost = function(){
+	var addr ={ WORD value[50] };
+	var addrlen = { int value = 50 };
+	var port = { WORD value }; 
+		
+	if(_dll.HP_Client_GetRemoteHost(owner.pClient, addr, addrlen, port)){
+		return addr.value,port.value;
+	}	
+}
+
+getPendingDataLength = function(){ 
+	var pending = {int value}; 
+	
+	return 
+		_dll.HP_Client_GetPendingDataLengthB(owner.pClient, pending), 
+		pending.value;
+}
+
+isPauseReceive = function(){
+	var result = {bool value};
+	
+	return 
+		_dll.HP_Client_IsPauseReceiveB(owner.pClient, result),
+		result.value; 
+}
+	
+isSecure = {
+	_get = function(){
+		return _dll.HP_Client_IsSecureB(owner.pClient);
+	}
+}
+
+hasStarted = {
+	_get = function(){
+		return _dll.HP_Client_HasStartedB(owner.pClient);
+	}
+}
+
+state = {
+	_get = function(){
+		return _dll.HP_Client_GetState(owner.pClient);
+	}
+}
+
+lastError = {
+    _get = function(){
+    	return _dll.HP_Client_GetLastError(owner.pClient);
+    }
+}
+
+lastErrorDesc = {
+    _get = function(){
+    	var p = _dll.HP_Client_GetLastErrorDescP(owner.pClient);
+    	if(p){
+    		return ..raw.str(p, true); 	
+    	}
+    }
+}
+
+connectionId = function(){
+    _get = function(){
+    	return _dll.HP_Client_GetConnectionID(owner.pClient);
+    }
+}
+
+isConnected = {
+    _get = function(){
+    	return _dll.HP_Client_IsConnectedB( owner.pClient ); 
+    }
+}
+
+reuseAddressPolicy = {
+    _get = function(){
+    	return _dll.HP_Client_GetReuseAddressPolicy(owner.pClient); 
+    }
+    _set = function(v){
+    	_dll.HP_Client_SetReuseAddressPolicy(owner.pClient, v);
+    } 
+}
+
+freeBufferPoolSize = {
+    _get = function(){
+    	return _dll.HP_Client_GetFreeBufferPoolSize(owner.pClient); 
+    }
+    _set = function(v){
+    	_dll.HP_Client_SetFreeBufferPoolSize(owner.pClient, v)
+    } 
+}
+
+freeBufferPoolHold = {
+    _get = function(){
+    	return _dll.HP_Client_GetFreeBufferPoolHold(owner.pClient); 
+    }
+    _set = function(v){
+    	_dll.HP_Client_SetFreeBufferPoolHold(owner.pClient, v);
+    } 
+}
+
+extra = {
+	_get = function(){
+		return _dll.HP_Client_GetExtraP(owner.pClient);
+	}
+	_set = function(v){
+		_dll.HP_Client_SetExtra(owner.pClient, v);
+	}
+}

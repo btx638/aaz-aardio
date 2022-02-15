@@ -1,0 +1,27 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.helper.extraMeta;
+
+namespace aaz.libhpsocket.app.simpleWebsocketServer;
+
+class userdata{
+	BYTE name[20];
+	ptr wsData;
+	@_metaProperty;
+}
+namespace userdata{
+	_properties = {
+		buildWsData = function(len){
+			owner.wsData = ..raw.realloc(len, owner.wsData, "");
+		};
+		concatWsData = function(pData, len){
+			owner.wsData = ..raw.concat(owner.wsData, pData, len)
+		};
+		getWsDataString = function(){
+			return ..raw.tostring(owner.wsData, 1, ..raw.sizeof(owner.wsData)); 	
+		};
+		free = function(){
+			owner.wsData = ..raw.realloc(0, owner.wsData);
+		};
+	}
+    _metaProperty = ..util.metaProperty(_properties, ..aaz.libhpsocket.helper.extraMeta);
+}

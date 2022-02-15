@@ -1,0 +1,17 @@
+﻿import aaz.libhpsocket.listener.agent;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.listener;
+class tcpAgent{
+	ctor(){
+		this = ..aaz.libhpsocket.listener.agent("component.tcpAgent");
+		this.pListener = _dll.Create_HP_TcpAgentListenerP();
+	};
+	destroy = function(){
+		if(this.pListener){
+			_dll.Destroy_HP_TcpAgentListener(this.pListener);
+			this.pListener = null;
+		}
+	};
+}

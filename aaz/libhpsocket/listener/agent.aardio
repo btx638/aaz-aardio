@@ -1,0 +1,12 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.listener;
+import aaz.libhpsocket.listener.properties.agent;
+
+namespace aaz.libhpsocket.listener;
+class agent{
+	ctor(componentClassPath){
+		this = ..aaz.libhpsocket.listener(componentClassPath);
+	};	
+	@_metaProperty;
+}
+agent._metaProperty = ..util.metaProperty(..aaz.libhpsocket.listener.properties.agent); 

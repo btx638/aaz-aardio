@@ -1,0 +1,28 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.component.properties.udpCast;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component;
+class udpCast{
+	ctor(listener, pClient){
+		if(pClient){
+			this.pClient = pClient;
+		}
+		elseif(listener){
+			this.pClient = _dll.Create_HP_UdpCastP(listener);
+			..table.gc(this, "destroy");
+		}
+		else {
+			error("请指定参数@1 pClient 或参数@2 pListener", 2);
+		}
+	};	
+	destroy = function(){
+		if(this.pClient){
+			_dll.Destroy_HP_UdpCast(this.pClient);
+			this.pClient = null;
+		}
+	};	
+	@_metaProperty;
+}
+udpCast._metaProperty = ..util.metaProperty(..aaz.libhpsocket.component.properties.udpCast); 

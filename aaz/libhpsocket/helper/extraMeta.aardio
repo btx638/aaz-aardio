@@ -1,0 +1,25 @@
+﻿
+namespace aaz.libhpsocket.helper.extraMeta{
+    updateExtra = function(){
+        if(!owner[["(extra)"]]){
+        	error("extra 未设置",2)
+        }
+    	return ..raw.convert(owner, owner[["(extra)"]]);
+    };
+    newExtra = function(){
+    	return ..raw.realloc(..raw.sizeof(owner), null, owner);
+    };
+    extra = {
+        _set = function(v){
+            if(v === null){
+                owner[["(extra)"]] = ..raw.realloc(0, owner[["(extra)"]]);
+            	return ; 
+            }
+            owner[["(extra)"]] = v;
+        	..raw.convert(v, owner);
+        }
+        _get = function(ownerCall){
+        	return owner[["(extra)"]]; 
+        }
+    }	
+}

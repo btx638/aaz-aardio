@@ -1,0 +1,35 @@
+﻿import aaz.libhpsocket;
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.listener.properties.threadPool;
+_topointer = function(){
+	return owner.pListener;
+}
+
+onStartup = {
+	_set = function(fn){
+		owner.OnStartupCallback = owner.createThreadCallback(fn, "void(ptr pThreadPool)");
+		_dll.HP_Set_FN_ThreadPool_OnStartup(owner.pListener, owner.OnStartupCallback); 	
+	}	
+}
+
+onShutdown = {
+	_set = function(fn){
+		owner.OnShutdownCallback = owner.createThreadCallback(fn, "void(ptr pThreadPool)");
+		_dll.HP_Set_FN_ThreadPool_OnShutdown(owner.pListener, owner.OnShutdownCallback); 	
+	}	
+}
+
+onWorkerThreadStart = {
+	_set = function(fn){
+		owner.OnWorkerThreadStartCallback = owner.createThreadCallback(fn, "void(ptr pThreadPool, INT threadID)");
+		_dll.HP_Set_FN_ThreadPool_OnWorkerThreadStart(owner.pListener, owner.OnWorkerThreadStartCallback); 	
+	}	
+}
+
+onWorkerThreadEnd = {
+	_set = function(fn){
+		owner.OnWorkerThreadEndCallback = owner.createThreadCallback(fn, "void(ptr pThreadPool, INT threadID)");
+		_dll.HP_Set_FN_ThreadPool_OnWorkerThreadEnd(owner.pListener, owner.OnWorkerThreadEndCallback); 	
+	}	
+}

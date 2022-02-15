@@ -1,0 +1,55 @@
+﻿import aaz.libhpsocket.helper.websocket;
+import aaz.libhpsocket.helper.server;
+
+namespace aaz.libhpsocket.helper.httpServer;
+..table.mix(self, ..aaz.libhpsocket.helper.server);
+
+var wsHelper = ..aaz.libhpsocket.helper.websocket;
+
+getUrl = function(component, path, scheme){
+	var ip, port = component.getListenAddress();
+	if( !(ip&&port) ) return ;
+	if( ip=="0.0.0.0" )ip = "localhost";
+	var url = ..string.format("%s://%s:%d", scheme:"http", ip, port); 
+	if(path){
+		path = ..string.replace(path, "\\", "/");
+		if(path[1]!='/'#) path= "/" + path;
+		return url + path;
+	}
+	return url;
+}
+
+getWsUrl = function(component, path){
+	return self.getUrl(component, path, "ws");
+}
+
+getWssUrl = function(component, path){
+	return self.getUrl(component, path, "wss");
+}
+
+getWsSecAccept = function(component, connId){
+	return wsHelper.getSecAccept(component.getHeader(connId, "Sec-WebSocket-Key")); 
+}
+
+getWsSecProtocol = function(component, connId){
+	var protocol = component.getHeader(connId, "Sec-WebSocket-Protocol");
+	if(protocol) return ..string.split(protocol, "<, >");
+	return {};
+}
+
+sendSwitchingProtocols = function(component, connId, headers){
+	return component.sendResponse(connId, null, headers, 101/*HSC_SWITCHING_PROTOCOLS*/, null)	
+}
+
+sendWsSwitchingProtocols = function(component, connId, headers, protocol){
+	headers = ..aaz.libhpsocket.helper.headers(headers);
+	
+	headers.mixin({
+		["Connection"] = "Upgrade";
+		["Upgrade"] = "websocket";
+		["Sec-WebSocket-Accept"] = self.getWsSecAccept(component,connId);
+	//	["Sec-WebSocket-Protocol"] = protocol : self.getWsSecProtocol(component,connId)[1];
+	})
+
+	return component.sendResponse(connId,null,headers,101/*HSC_SWITCHING_PROTOCOLS*/,null)	
+}

@@ -1,0 +1,192 @@
+﻿import aaz.libhpsocket;
+
+namespace aaz.libhpsocket.component.properties.udpNode;
+var _dll = ..aaz.libhpsocket._dll;
+
+_topointer = function(){
+    return owner.pNode; 
+}
+
+start = function(bindAddress, port){
+	if( _dll.HP_UdpNode_StartB(owner.pNode, bindAddress, port)){
+		return true; 
+	}
+	return false, owner.lastError; 
+}
+
+startWithCast = function(bindAddress, port=0, castMode=-1, castAddress){
+	if( _dll.HP_UdpNode_StartWithCastB(owner.pNode, bindAddress, port, castMode, castAddress)){
+		return true; 
+	}
+	return false, owner.lastError; 
+}
+
+stop = function(){
+	if( _dll.HP_UdpNode_StopB(owner.pNode)){
+		return true; 
+	}
+	return false, owner.lastError; 	
+}
+
+wait = function(milliseconds=-1){
+	return _dll.HP_UdpNode_WaitB(owner.pNode, milliseconds); 
+}
+
+send = function(remoteAddress, remotePort, pBuffer, length){
+	return _dll.HP_UdpNode_SendB(owner.pNode,remoteAddress, remotePort, pBuffer, length);
+}
+
+sendPart = function(remoteAddress, remotePort, pBuffer, length, offset){
+	return _dll.HP_UdpNode_SendPartB(owner.pNode,remoteAddress, remotePort, pBuffer, length, offset);
+}
+
+sendPackets = function(remoteAddress, remotePort, pBuffers, iCount){
+	return _dll.HP_UdpNode_SendPacketsB( owner.pNode,remoteAddress, remotePort, pBuffers, iCount);
+}
+
+sendCast = function(pBuffer, length){
+	return _dll.HP_UdpNode_SendCastB(owner.pNode, pBuffer, length); 
+}
+
+sendCastPart = function(pBuffer, length, offset){
+	return !!_dll.HP_UdpNode_SendCastPartB(owner.pNode, pBuffer, length, offset); 
+}
+
+sendCastPackets = function(pBuffer, count){
+	return !!_dll.HP_UdpNode_SendCastPackets(owner.pNode, pBuffer, count ); 
+}
+
+getLocalAddress = function(){
+	var addr ={ WORD value[60]}
+	var addrlen = {int value=60}
+	var port = {WORD value}
+	if(_dll.HP_UdpNode_GetLocalAddress(owner.pNode,addr,addrlen,port))
+		return addr.value,port.value;
+}
+
+getCastAddress = function(){
+	var addr ={ WORD value[60]}
+	var addrlen = {int value=60}
+	var port = {WORD value}
+
+	return _dll.HP_UdpNode_GetCastAddress(owner.pNode,addr,addrlen,port), addr.value,port.value;
+}
+
+getPendingDataLength = function(){ 
+	var pending = {int value} 
+	return _dll.HP_UdpNode_GetPendingDataLengthB(owner.pNode,pending), pending.value;
+}
+
+extra = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetExtraP(owner.pNode); 
+    }
+    _set = function(pExtra){
+    	_dll.HP_UdpNode_SetExtra(owner.pNode, pExtra)
+    }
+}
+
+hasStarted = function(){
+    _get = function(){
+    	return !!_dll.HP_UdpNode_HasStarted( owner.pNode ); 
+    }
+}
+
+state = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetState(owner.pNode); 	
+    }		
+}
+
+lastError = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetLastError(owner.pNode); 	
+    }		
+}
+
+lastErrorDesc = {
+    _get = function(){
+		var p = _dll.HP_UdpNode_GetLastErrorDescP(owner.pNode ); 
+		if( p ){
+			return ..raw.str(p, true);
+		}
+    }		
+}
+
+castMode = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetCastMode(owner.pNode ); 
+    }	
+}
+
+maxDatagramSize = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetMaxDatagramSize(owner.pNode ); 
+    }   
+    _set = function(dwMaxDatagramSize){
+    	_dll.HP_UdpNode_SetMaxDatagramSize(owner.pNode, dwMaxDatagramSize ); 
+    }	
+}
+
+multiCastTtl = {
+    _get = function(){
+    	return _dll.HP_UdpNode_GetMultiCastTtl(owner.pNode); 
+    }  
+    _set = function(mcTtl){
+    	_dll.HP_UdpNode_SetMultiCastTtl(owner.pNode, mcTtl); 
+    }	
+}
+
+isMultiCastLoop = {
+    _get = function(){
+    	return _dll.HP_UdpNode_IsMultiCastLoopB(owner.pNode); 
+    }
+    _set = function(mcLoop){
+    	_dll.HP_UdpNode_SetMultiCastLoop(owner.pNode, mcLoop)
+    }
+}
+
+reuseAddressPolicy = {
+	_get = function(){
+		return _dll.HP_UdpNode_GetReuseAddressPolicy( owner.pNode ); 
+	}
+	_set = function( reusePolicy){
+		_dll.HP_UdpNode_SetReuseAddressPolicy( owner.pNode, reusePolicy)
+	}
+}
+
+workerThreadCount = {
+	_get = function(){
+		return _dll.HP_UdpNode_GetWorkerThreadCount( owner.pNode ); 
+	}
+	_set = function(workerThreadCount){
+		_dll.HP_UdpNode_SetWorkerThreadCount( owner.pNode, workerThreadCount )
+	}
+}
+
+postReceiveCount = {
+	_get = function(){
+		return _dll.HP_UdpNode_GetPostReceiveCount( owner.pNode ); 
+	}
+	_set = function(postReceiveCount){
+		_dll.HP_UdpNode_SetPostReceiveCount( owner.pNode, postReceiveCount )
+	}
+}
+
+freeBufferPoolSize = {
+	_get = function(){
+		return _dll.HP_UdpNode_GetFreeBufferPoolSize( owner.pNode ); 
+	}
+	_set = function(freeBufferPoolSize){
+		_dll.HP_UdpNode_SetFreeBufferPoolSize( owner.pNode, freeBufferPoolSize )
+	}
+}
+
+freeBufferPoolHold = {
+	_get = function(){
+		return _dll.HP_UdpNode_GetFreeBufferPoolHold( owner.pNode ); 
+	}
+	_set = function( freeBufferPoolHold ){
+		_dll.HP_UdpNode_SetFreeBufferPoolHold( owner.pNode, freeBufferPoolHold )
+	}	
+}

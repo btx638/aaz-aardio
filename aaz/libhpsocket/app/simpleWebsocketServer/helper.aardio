@@ -1,0 +1,60 @@
+﻿import web.json;
+import aaz.libhpsocket.helper.httpServer;
+import aaz.libhpsocket.app.simpleWebsocketServer.userdata;
+
+
+namespace aaz.libhpsocket.app.simpleWebsocketServer.helper;
+
+var readUserData = function(component, connId){
+	var ok, extra = component.getConnectionExtra(connId);
+	var userData = ..aaz.libhpsocket.app.simpleWebsocketServer.userdata();
+	userData.extra = extra;
+	
+	return userData;   
+}
+
+var newExtra = function(){
+	return ..aaz.libhpsocket.app.simpleWebsocketServer.userdata().newExtra(); 
+}
+
+var freeExtra = function(component, connId){	
+	var userData = readUserData(component, connId)
+	userData.free();
+	userData.extra = null;
+
+	component.setConnectionExtra(connId, null);
+}
+
+onHandShake = function(component, connId){
+	component.setConnectionExtra(connId, newExtra() );
+}
+
+onWsMessageHeader = function(component, connId, final, reserved, opcode, mask, bodyLen){
+	var userData = readUserData(component, connId);
+	userData.buildWsData(bodyLen);
+	userData.updateExtra();
+}
+
+onWsMessageBody = function(component, connId, pData, length){
+	var userData = readUserData(component, connId);
+	userData.concatWsData(pData, length);
+	userData.updateExtra();
+}
+
+onWsMessageComplete = function(component, connId){
+	var userData = readUserData(component, connId);
+	
+	var str = userData.getWsDataString();
+	if(#str){ 
+		return str;
+	}	
+}
+
+
+onClose = function(component, connId, operation, errorCode){
+	freeExtra(component, connId)
+}
+
+sendWsSwitchingProtocols = function(component, connId){
+	return ..aaz.libhpsocket.helper.httpServer.sendWsSwitchingProtocols(component, connId);
+}

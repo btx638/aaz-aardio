@@ -1,0 +1,97 @@
+﻿import thread.command;
+import inet.url;
+import aaz.libhpsocket.app.simpleWebsocketClient.clientHelper;
+
+namespace aaz.libhpsocket.app.simpleWebsocketClient;
+class base{
+	ctor(listener, component, winform){
+		var thCmd = ..thread.command(winform);
+		this._form = thCmd._form;
+		
+		listener.threadGlobal = {
+			_postUiHwnd = thCmd.hwnd;
+		}
+		
+		listener.onThreadCreated = function(sessionId){
+			import thread.command;
+			import aaz.libhpsocket.app.simpleWebsocketClient.clientHelper;
+			
+			_clientHelper = aaz.libhpsocket.app.simpleWebsocketClient.clientHelper;
+			_postUi = function(name, ...){
+				thread.command.post(_postUiHwnd, sessionId++name, ...); 
+			}
+		}
+
+		listener.onHandShake = function(component, connId){
+			_clientHelper.sendWsUpgradeRequest(component);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			if(upgradeType != 1) return 2; 
+			if(!_clientHelper.checkWsUpgradeResponse(component)) return 2; 
+			
+			_postUi("open");
+		}
+		
+		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+			_clientHelper.onWsMessageHeader(component, connId, final, reserved, opCode, mask, bodyLen);
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){
+			_clientHelper.onWsMessageBody(component, pData, len);	
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			var msg = _clientHelper.onWsMessageComplete(component);
+			if(msg){
+				_postUi("message", msg);
+			}
+		}
+		
+		listener.onClose = function(component,connId,enOperation,errCode){
+			_clientHelper.onClose(component);
+			_postUi("close");
+		}
+	
+		..table.gc(this, "close");
+	};
+	close = function(){
+		component.destroy();
+		listener.destroy();		
+	};
+	start = function(host, port){
+		component.extra = ..aaz.libhpsocket.app.simpleWebsocketClient.clientHelper.newExtra(this.path, this.origin);
+		return component.start(host, port);
+	};
+	disconnect = function(){
+		return component.stop();
+	};
+	connect = function(url){
+		var uri = ..inet.url.split(url);
+		this.host = uri.host;
+		this.path = uri.path ++ (uri.extraInfo:"");
+		if(uri.port == 0){
+			if(uri.scheme="ws"){
+				this.port = 80;
+			}
+			elseif(uri.scheme="wss"){
+				this.port = 443;
+			}
+			else error("不支持的协议", 2);
+		}
+		else {
+			this.port = uri.port;
+		}
+		
+		return this.start(this.host, this.port);
+	};
+	send = function(msg){
+		return component.sendWsMessage(msg);
+	};
+	on = function(name, callback){
+		thCmd[listener._sessionId ++ name] = callback;
+	};
+	isDisconnect = function(){
+		return component.state == 3; 
+	}	
+}

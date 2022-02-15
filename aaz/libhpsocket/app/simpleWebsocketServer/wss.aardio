@@ -1,0 +1,13 @@
+﻿import aaz.libhpsocket.ssl.component.httpServer;
+import aaz.libhpsocket.ssl.listener.httpServer;
+import aaz.libhpsocket.app.simpleWebsocketServer.base;
+
+namespace aaz.libhpsocket.app.simpleWebsocketServer;
+class wss{
+	ctor(){
+		var listener = ..aaz.libhpsocket.ssl.listener.httpServer();
+		var component = ..aaz.libhpsocket.ssl.component.httpServer(listener);
+		
+		this = ..aaz.libhpsocket.app.simpleWebsocketServer.base(listener, component);
+	};
+}

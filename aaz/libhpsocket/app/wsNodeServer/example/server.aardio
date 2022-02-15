@@ -1,0 +1,37 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="ws node server";right=759;bottom=469)
+winform.add(
+edit={cls="edit";text="Edit";left=24;top=320;right=504;bottom=448;edge=1;multiline=1;z=1};
+listview={cls="listview";left=24;top=32;right=336;bottom=272;edge=1;z=2}
+)
+/*}}*/
+
+import aaz.libhpsocket.app.wsNodeServer.ws;
+
+winform.listview.insertColumn("编号", 50)
+winform.listview.insertColumn("节点名字", -1)
+
+var server = aaz.libhpsocket.app.wsNodeServer.ws();
+
+server.on("register",function(name){
+	winform.edit.log( "注册：" ++  name,'\r\n' )
+});
+
+server.on("close",function(name){
+	winform.edit.log( "断开：" ++  name,'\r\n' )
+});
+
+server.on("nodeUpdate", function(nodes){
+	winform.listview.clear();
+	for(k,v in nodes){
+		winform.listview.addItem({winform.listview.count+1;k})
+	
+	}
+		
+});
+
+server.start(10001)
+
+winform.show();
+win.loopMessage();

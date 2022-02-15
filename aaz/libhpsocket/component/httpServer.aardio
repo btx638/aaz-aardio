@@ -1,0 +1,37 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.component.properties.httpServer;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component;
+class httpServer{
+	ctor(listener, pServer){
+		if(pServer){
+			this.pServer = pServer;
+		}
+		elseif(listener){
+			this.pServer = _dll.Create_HP_HttpServerP(listener);
+			..table.gc(this, "destroy");
+		}
+		else {
+			error("请指定参数@1 pServer 或参数@2 pListener", 2);
+		}
+	};
+	destroy = function(){
+		if(this.pServer){
+			_dll.Destroy_HP_HttpServer(this.pServer);
+			this.pServer = null;
+		}
+	};
+	@_metaProperty;
+}
+httpServer._metaProperty = ..util.metaProperty(..aaz.libhpsocket.component.properties.httpServer);
+
+/**intellisense(aaz.libhpsocket.component)
+httpServer() = 创建 httpServer 组件\n!httpServer.
+end intellisense**/
+
+/**intellisense(!httpServer)
+start(.(监听地址, 监听端口) = 启动通信组件\n启动服务端通信组件，启动完成后可开始接收客户端连接并收发数据
+end intellisense**/
+

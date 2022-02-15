@@ -1,0 +1,92 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.listener;
+import aaz.libhpsocket.listener.properties.httpServer;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.listener;
+class httpServer{
+	ctor(){
+		this = ..aaz.libhpsocket.listener("component.httpServer");
+		this.pListener = _dll.Create_HP_HttpServerListenerP()
+	};
+	destroy = function(){
+		if(this.pListener){
+			_dll.Destroy_HP_HttpServerListener(this.pListener);
+			this.pListener = null;
+		}
+	};	
+	@_metaProperty;
+}
+httpServer._metaProperty = ..util.metaProperty(..aaz.libhpsocket.listener.properties.httpServer);
+
+/**intellisense(aaz.libhpsocket.listener)
+httpServer = http httpServer 监听器类
+httpServer() = 创建 ssl http httpServer 监听器\n!httpServer.
+end intellisense**/
+
+/**intellisense(!httpServer)
+onPrepareListen = @.onPrepareListen = function(component, soListen){
+	__/*准备监听，绑定监听地址前触发*/
+}
+onAccept = @.onAccept = function(component, connId, client){
+	__/*客户端连接请求到达时触发*/
+}
+onHandShake = @.onHandShake = function(component, connId){
+	__/*握手完成时触发*/
+}
+onSend = @.onSend = function(component, connId, pData, length){
+	__/*数据发送成功后触发*/
+}
+onClose = @.onClose = function(component, connId, operation, errorCode){
+	__/*连接正常或异常关闭时触发*/
+}
+onShutdown = @.onShutdown = function(component){
+	__/*通信组件停止后触发*/
+}
+onReceive = @.onReceive = function(component, connId, pData, length){
+	__/*接收到数据时触发*/
+}
+onMessageBegin = @.onMessageBegin = function(component, connId){
+	__/*开始解析事件*/
+}
+onRequestLine = @.onRequestLine = function(component, connId, method, url){
+	__/*请求行解析完成事件*/
+}
+onHeader = @.onHeader = function(component, connId, name, value){
+	__/*请求头事件*/
+}
+onHeadersComplete = @.onHeadersComplete = function(component, connId){
+	__/*请求头事件*/
+}
+onBody = @.onBody = function(component, connId, pData, len){
+	__/*BODY 报文事件*/
+}
+onChunkHeader = @.onChunkHeader = function(component, connId, length){
+	__/*Chunked 报文头事件*/
+}
+onChunkComplete = @.onChunkComplete = function(component, connId){
+	__/*Chunked 报文结束事件*/
+}
+onMessageComplete = @.onMessageComplete = function(component, connId){
+	__/*完成解析事件*/
+}
+onUpgrade = @.onUpgrade = function(component, connId, upgradeType){
+	__/*升级协议*/
+}
+onParseError = @.onParseError = function(component, connId, errorCode, errorDesc){
+	__/*解析错误*/
+}
+onWsMessageHeader = @.onWsMessageHeader = function(component, connId, final, reserved, operationCode, mask, bodyLen){
+	__/*Web Socket 数据包头*/
+}
+onWsMessageBody = @.onWsMessageBody = function(component, connId, pData, length){
+	__/*Web Socket 数据包体*/
+}
+onWsMessageComplete = @.onWsMessageComplete = function(component, connId){
+	__/*Web Socket 数据包完成事件*/
+}
+onThreadCreated = @.onThreadCreated = function(sessionId){
+	__/*工作线程创建完毕*/
+} 
+end intellisense**/

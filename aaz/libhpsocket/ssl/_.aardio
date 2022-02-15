@@ -1,0 +1,17 @@
+﻿import aaz.libhpsocket;
+
+namespace aaz.libhpsocket.ssl;
+var _dll = ..aaz.libhpsocket._dll;
+
+defaultServerNameCallback = function(serverName, context){
+	return _dll.HP_SSL_DefaultServerNameCallbackW(serverName, context);
+}
+
+removeThreadLocalState = function(threadId){
+	_dll.HP_SSL_RemoveThreadLocalState(threadId);
+}
+
+/**intellisense(aaz.libhpsocket.ssl)
+defaultServerNameCallback(请求域名, SSL Context 对象) = SNI 默认回调函数, HP_SSLServer_SetupSSLContext 方法中如果不指定 SNI 回调函数则使用此 SNI 默认回调函数
+removeThreadLocalState(线程 ID) = 清理线程局部环境 SSL 资源, 参数是0则为当前线程
+end intellisense**/

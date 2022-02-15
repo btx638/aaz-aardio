@@ -1,0 +1,20 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.component.properties.threadPool;
+
+var _dll = aaz.libhpsocket._dll;
+
+namespace aaz.libhpsocket.component;
+class threadPool{
+	ctor(pListener){
+		this.pThreadPool = _dll.Create_HP_ThreadPoolP(pListener);
+		..table.gc(this, "destroy");
+	};
+	destroy = function(){
+		if(this.pThreadPool){
+			_dll.Destroy_HP_ThreadPool(this.pThreadPool);
+			this.pThreadPool = null;
+		}
+	};
+	@_metaProperty;
+}
+threadPool._metaProperty = ..util.metaProperty(..aaz.libhpsocket.component.properties.threadPool);

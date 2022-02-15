@@ -1,0 +1,20 @@
+﻿//libhpsocket 高性能网络库
+namespace aaz.libhpsocket;
+
+_dll = ..raw.loadDll( 
+	_STUDIO_INVOKED ? "~\lib\aaz\libhpsocket\.res\HPSocket4C_U.dll" : "\HPSocket4C_U.dll"
+);
+
+// https://github.com/ldcsaa/HP-Socket
+// https://github.com/ldcsaa/HP-Socket/blob/dev/Windows/Include/HPSocket/HPSocket4C.h
+// https://github.com/ldcsaa/HP-Socket/blob/dev/Windows/Include/HPSocket/HPSocket-SSL.h
+// https://github.com/ldcsaa/HP-Socket/blob/dev/Windows/Include/HPSocket/HPTypeDef.h
+// https://github.com/ldcsaa/HP-Socket/blob/dev/Doc/HP-Socket%20Development%20Guide.pdf
+
+/**intellisense(aaz)
+libhpsocket = 高性能网络库
+end intellisense**/
+
+/**intellisense(aaz.libhpsocket)
+_dll = dll 引用
+end intellisense**/
