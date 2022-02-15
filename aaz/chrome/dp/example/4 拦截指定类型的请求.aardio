@@ -62,7 +62,7 @@ var task = function(){
 	
 	// 打开网址
 	var ok, err = cdp.Page.navigate(
-		url = "https://www.cnbeta.com/";
+		url = "https://www.163.com/";
 	)
     if(!ok){
         io.print("打开网址失败", err)
@@ -77,16 +77,16 @@ var task = function(){
     }
 }
 
-cdp.onTaskBegin = function(){
+var onTaskBegin = function(){
     winform.btnRunTask.disabled = true
 }
 
-cdp.onTaskEnd = function(...){
+var onTaskEnd = function(...){
     winform.btnRunTask.disabled = false
 }
 
 winform.btnRunTask.oncommand = function(id,event){
-	io.print(cdp.run(task));
+	cdp.run(task, onTaskBegin, onTaskEnd)
 }
 
 winform.show();

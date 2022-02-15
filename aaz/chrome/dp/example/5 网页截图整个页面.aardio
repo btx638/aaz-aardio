@@ -21,7 +21,7 @@ import aaz.chrome.dp;
 var cdp, err = aaz.chrome.dp()
 
 var task = function(url){
-	cdp.open(,null)
+	cdp.open(,true)
     cdp.connect();
 	cdp.Page.enable();
 	cdp.Page.navigate(
@@ -67,6 +67,9 @@ var task = function(url){
 		}
 
 	)
+	
+	// 关闭浏览器
+	cdp.Browser.close(); 
 	if(ret){
 		return crypt.bin.decodeBase64(ret.data); 	
 	}

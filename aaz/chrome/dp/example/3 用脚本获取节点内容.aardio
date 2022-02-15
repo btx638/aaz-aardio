@@ -143,7 +143,7 @@ var task = function(url, selector){
 		 var getInnerText = function(selector){
        		var doms = document.querySelectorAll(selector);
        		var ret = new Array();
-       		for(var i=0;i<doms.length;i++){
+       		for(var i=1;i<doms.length;i++){
            		ret.push(doms[i].innerText);
        		}
        		return ret; 

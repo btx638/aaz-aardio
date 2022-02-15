@@ -3,11 +3,8 @@ import process;
 import wsock;
 import inet.whttp;
 import inet.url;
-import win.timer;
-import win.guid;
 import web.json;
 import thread.command;
-import time.performance;
 import aaz.async;
 import aaz.libhpsocket.app.simpleWebsocketClient.ws;
 
@@ -79,8 +76,8 @@ class dp{
 	on = function(method, callback){
 		methodsOfListen[method] = callback;
 	};
-	run = function(func, onBegin, onEnd, ...){
-		return async.run(func, onBegin, onEnd, ...); 
+	run = function(func, onStart, onComplete, ...){
+		return async.run(func, onStart, onComplete, ...); 
 	};
 	killChrome = function(){
 		if(chromePid){

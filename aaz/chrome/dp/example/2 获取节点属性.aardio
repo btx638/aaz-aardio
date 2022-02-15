@@ -9,6 +9,9 @@ button={cls="button";text="开始";left=37;top=36;right=203;bottom=115;z=1}
 io.open()
 
 import aaz.chrome.dp;
+import aaz.async
+
+var async = aaz.async();
 
 var cdp, err = aaz.chrome.dp()
 if(!cdp){
@@ -17,8 +20,6 @@ if(!cdp){
 }
 
 var task = function(){
-    io.print("完成开始")
-    
  	// 打开浏览器
 	var ok, err = cdp.open()
     if(!ok){
@@ -73,7 +74,7 @@ var task = function(){
         io.print("获取节点失败", err);
     	return ; 
     }
-    
+       
     // 读取链接的属性
 	for(i=1;#doms.nodeIds;1){
 		var ret, err = cdp.DOM.getAttributes(
@@ -91,14 +92,14 @@ var task = function(){
 		}
 	}
 	
-	// 关必浏览器
+	// 关闭浏览器
 	cdp.Browser.close()
 	
-	io.print("完成任务")
+	return "返回值"; 
 }
 
 winform.button.oncommand = function(id,event){
-	io.print(cdp.run(task));
+	cdp.run(task, λ() io.print("任务开始") , λ(r) io.print(r))
 }
 
 winform.show();
