@@ -14,8 +14,9 @@ class async{
 			timer = null;
 		}
 	};
-	await = function(id){
+	await = function(id, info){
 		requestIds[id] = {
+			info = info;
 			tick = ..time.tick();
 			fiber = ..fiber.current();
 		}
@@ -23,8 +24,13 @@ class async{
 	};
 	resume = function(id, ...){
 		if(requestIds[id]){
-			assert( ..fiber.resume(requestIds[id].fiber, ...));
+			var f = requestIds[id].fiber
+			if(..fiber.status(f) == ..fiber.status.dead){
+				return ; 
+			}
+
 			requestIds[id] = null;
+			assert( ..fiber.resume(f, ...));
 		}
 	};
 	run = function(func, onStart, onComplete, ...){
@@ -51,7 +57,7 @@ class async{
 			
 			for(id, info in requestIds){
 				if((tick - info.tick) > this.timeout){
-    				this.resume(id, false, "timeout");
+					this.resume(id, false, "timeout");
 				}
 			}
 		}

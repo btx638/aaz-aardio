@@ -24,11 +24,12 @@ class dp{
 			if(!msg){
 				return ; 
 			}
+
 			var t = ..web.json.tryParse(msg)
 			if(type(t) != type.table){
 				return ; 
 			}	
-			// 请求回复
+			// 回复
 			if(t.id){
 				if(t.error){
 					async.resume(t.id, null, t.error.message);
@@ -39,7 +40,8 @@ class dp{
 			} // 订阅事件
 			elseif(t.method){
 				async.resume(t.method, t.params)
-	
+				
+				// 
 				if(methodsOfListen[t.method]){
 					async.run(methodsOfListen[t.method], null, null, t.params)
 				}
@@ -55,7 +57,7 @@ class dp{
 
 		var ws = ..aaz.libhpsocket.app.simpleWebsocketClient.ws();
 		ws.on("open", lambda() async.resume("connectChrome", true));
-		ws.on("close", lambda() async.resume("connectChrome", false));
+	//	ws.on("close", lambda() async.resume("connectChrome", false));
 		ws.on("message", doMsg)
 		
 		async.startCheckTimeout(9000, 200);
@@ -112,7 +114,8 @@ class dp{
 			"--remote-debugging-port=" ++ port;
 		}
 		if(userDataDir){
-			..table.push(cmd, "--user-data-dir=" ++ ..io.createDir(userDataDir))
+			var path = ..io.createDir(userDataDir) 
+			..table.push(cmd, "--user-data-dir=" ++ path) 
 		}
 			
 		if(disableGpu){
@@ -178,8 +181,10 @@ class dp{
 		}
 		return pages[1].webSocketDebuggerUrl; 		
 	};	
-	connect = function(){
-		var url, err = this.getWebSocketDebuggerUrl(this.chromeHost, this.chromePort);
+	connect = function(chromeHost, chromePort){
+		chromeHost := this.chromeHost
+		chromePort := this.chromePort
+		var url, err = this.getWebSocketDebuggerUrl(chromeHost, chromePort);
 		if(!url){
 			return false, err; 
 		}
@@ -192,6 +197,7 @@ class dp{
 	};
 	send = function(method, params){
 		requestId++;
+
 		var json = ..web.json.stringify(
 			id = requestId;
 			method = method;
@@ -199,16 +205,16 @@ class dp{
 		);
 		var ok = ws.send(json);
 		if(!ok){
-			return false, "发送 ws 请求失败"; 
+			return false, "ws 发送请求失败"; 
 		} 
-		return requestId; 
+		return requestId, method; 
 	};
 	xcall = function(method, params){
 		var requestId, err = this.send(method, params);
 		if(!requestId){
 			return null, err; 
 		}
-		return async.await(requestId); 
+		return async.await(requestId, err); 
 	};
 	@_meta;
 }

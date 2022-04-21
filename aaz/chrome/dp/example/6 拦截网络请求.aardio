@@ -1,0 +1,115 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=385;bottom=140)
+winform.add(
+btnRunTask={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+import console
+
+// 接收事件
+/*
+cdp.on("Network.webSocketCreated", function(params){
+	console.dumpJson(params)
+})
+*/
+
+/*
+// 接收事件
+cdp.on("Network.webSocketFrameReceived", function(params){
+	console.dumpJson(params)
+})
+
+*/	
+	
+// 接收事件
+cdp.on("Target.targetCreated", function(params){
+	console.log("Target.targetCreated")
+	console.dumpJson(params)
+})
+
+// 接收事件
+cdp.on("Target.targetInfoChanged", function(params){
+	console.log("Target.targetInfoChanged")
+	console.dumpJson(params)
+})
+
+// 接收事件
+cdp.on("Target.targetDestroyed", function(params){
+	console.dumpJson(params)
+})
+
+// 任务函数
+var task = function(){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+    
+	// 控制是否发现可用的目标并通过targetCreated/targetInfoChanged/targetDestroyed事件通知
+	io.print( cdp.Target.setDiscoverTargets({ discover =true })	 )
+    
+    // 订阅 Network 事件
+	cdp.Network.enable()
+	
+
+ 
+	// 订阅 Page 事件	
+	var ok, err = cdp.Page.enable();
+    if(!ok){
+        io.print("订阅 Page 事件失败", err);
+    	return ; 
+    }
+
+	// 打开网址
+	var ok, err = cdp.Page.navigate(
+		url = "https://www.twitch.tv/senvale/";
+	)
+    if(!ok){
+        io.print("打开网址失败", err)
+    	return ; 
+    }
+	
+	// 等待页面加载完成
+	var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    if(!ok){
+        io.print("等待页面加载完成失败", err);
+    	return ; 
+    }
+    
+    cdp.Target.createTarget(url="")
+}
+
+var onTaskBegin = function(){
+    winform.btnRunTask.disabled = true
+}
+
+var onTaskEnd = function(...){
+    winform.btnRunTask.disabled = false
+}
+
+winform.btnRunTask.oncommand = function(id,event){
+	cdp.run(task, onTaskBegin, onTaskEnd)
+}
+
+winform.show();
+win.loopMessage();

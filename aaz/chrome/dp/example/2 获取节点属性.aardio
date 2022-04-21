@@ -9,9 +9,6 @@ button={cls="button";text="开始";left=37;top=36;right=203;bottom=115;z=1}
 io.open()
 
 import aaz.chrome.dp;
-import aaz.async
-
-var async = aaz.async();
 
 var cdp, err = aaz.chrome.dp()
 if(!cdp){
@@ -93,7 +90,7 @@ var task = function(){
 	}
 	
 	// 关闭浏览器
-	cdp.Browser.close()
+	//cdp.Browser.close()
 	
 	return "返回值"; 
 }
