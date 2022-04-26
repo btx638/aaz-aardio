@@ -1,0 +1,26 @@
+﻿
+namespace aaz.raw;
+
+intToUint = function(v){
+	return v >>> 0; 	
+}
+
+intToUint2 = function(v){
+	return v + 4294967296 /*2的32次方*/; 	
+}
+
+uintToInt = function(v){
+	return v & 0xFFFFFFFF;
+}
+
+ulongToUint = function(v){
+	return tonumber(v >> 32); 
+}
+
+ulongToInt = function(v){
+	return uintToInt(ulongToUint(v));
+}
+
+intToUword = function(v){
+	return 0xFFFF & v; 
+}
