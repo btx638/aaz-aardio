@@ -1,0 +1,93 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=239;bottom=143)
+winform.add(
+button={cls="button";text="开始";left=37;top=36;right=203;bottom=115;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+
+var task = function(){
+ 	// 以无头模式启动
+	var ok, err = cdp.open(, true)
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+    
+	// 订阅 Page 事件	
+	cdp.Page.enable();
+
+	// 打开网址
+	cdp.Page.navigate(
+		url = "https://www.htmlayout.cn/";
+	)
+	
+	// 等待页面加载完成
+	cdp.waitEvent( "Page.loadEventFired" );
+	
+
+ 	// 将根 DOM 节点（以及可选的子树）返回给调用者
+    cdp.DOM.getDocument()
+
+	var ret = cdp.DOM.performSearch(
+         query = '/html/body/div[1]/div[3]/div[1]/div/div[1]/div[2]/h2/a'
+     );
+     
+     // 结果
+     if(ret.resultCount){
+        ret = cdp.DOM.getSearchResults(
+            searchId = ret.searchId;
+            fromIndex = 0;
+            toIndex = ret.resultCount;
+        );
+        
+        for(i=1;#ret.nodeIds;1){
+			var ret, err = cdp.DOM.getAttributes(
+				nodeId =ret.nodeIds[i]
+			);
+	
+			for(j=1;#ret.attributes;2){
+				var k = ret.attributes[j];
+				var v = ret.attributes[j+1];
+				io.print(k, v);
+			}
+        }
+        
+     }
+
+	// 关闭浏览器
+	cdp.Browser.close()
+}
+
+winform.button.oncommand = function(id,event){
+	cdp.run(
+		task, 
+		function(){
+			winform.button.disabled = true
+		}, 
+		function(){
+			winform.button.disabled = false
+		}
+	)
+}
+
+winform.show();
+win.loopMessage();
+return winform;

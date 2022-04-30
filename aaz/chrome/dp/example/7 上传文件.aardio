@@ -1,0 +1,75 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="百度搜图";right=287;bottom=103)
+winform.add(
+button={cls="button";text="运行";left=88;top=48;right=216;bottom=88;z=1}
+)
+/*}}*/
+
+//io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+cdp.timeout = 20000;
+
+var task = function(path){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+
+	// 订阅 Page 事件	
+	cdp.Page.enable();
+
+	// 打开网址
+	cdp.Page.navigate(
+		url = "https://www.baidu.com";
+	)
+
+	// 等待页面加载完成
+	cdp.waitEvent( "Page.loadEventFired");
+
+	// 点击相机
+	cdp.Runtime.evaluate(
+		expression = /**
+       document.querySelector(".soutu-btn").click();
+		**/
+	)
+
+	// 获取上传的 input 元素，选择器也可以用 [type=file]
+	var ret = cdp.DOM.querySelector(
+		nodeId = cdp.DOM.getDocument().root.nodeId;
+		selector = ".upload-pic";
+	)
+
+	// 填写文件路径
+	 cdp.DOM.setFileInputFiles(
+		files = {path};
+		nodeId = ret.nodeId
+	) 
+}
+import fsys.dlg
+winform.button.oncommand = function(id,event){
+	var path = fsys.dlg.open("图片文件|*.jpg") 
+	if(path){
+		cdp.run(task,,,path)
+	}
+	
+}
+
+winform.show();
+win.loopMessage();

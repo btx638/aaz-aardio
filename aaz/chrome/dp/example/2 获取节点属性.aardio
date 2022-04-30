@@ -37,6 +37,8 @@ var task = function(){
         io.print("订阅 Page 事件失败", err);
     	return ; 
     }
+    
+    cdp.Network.enable()
 	
 	// 打开网址
 	var ok, err = cdp.Page.navigate(

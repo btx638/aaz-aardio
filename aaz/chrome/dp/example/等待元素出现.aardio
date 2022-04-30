@@ -1,0 +1,100 @@
+
+
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=385;bottom=140)
+winform.add(
+button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+
+var js = /**
+function waitEle(selector) {
+    return new Promise(resolve => {
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelector(selector)) {
+                resolve(document.querySelector(selector));
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
+
+	async function waitEleAsync(selector) {
+  		return await waitEle(selector);
+	}	
+
+	waitEleAsync(`%s`)
+**/
+
+
+var waitEle = function(selector){
+	return cdp.Runtime.evaluate(
+		awaitPromise = true; // 执行是否应该等待结果值，并在等待的承诺被解决后返回。
+		expression = string.format(js, selector);
+		returnByValue = true;
+	)
+}
+
+
+cdp.timeout = 20000;
+
+var task = function(){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+
+	// 打开网址
+	cdp.Page.navigate(
+		url = "https://www.baidu.com/";
+	)
+
+	// 等待页面加载完成
+	io.print("等待元素")
+	waitEle("[name='tj_wenku']")
+	io.print("等待元素完毕")
+}
+
+winform.button.oncommand = function(id,event){
+	cdp.run(
+		task,
+		function(){
+			winform.button.disabled = true
+		},
+		function(){
+			winform.button.disabled = false
+		}
+	)
+}
+
+winform.show();
+win.loopMessage();

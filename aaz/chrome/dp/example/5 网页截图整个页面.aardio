@@ -21,6 +21,7 @@ import aaz.chrome.dp;
 var cdp, err = aaz.chrome.dp()
 
 var task = function(url){
+	// 以无头模式启动，就是不显示浏览器的界面
 	cdp.open(,true)
     cdp.connect();
 	cdp.Page.enable();
@@ -30,23 +31,26 @@ var task = function(url){
 	cdp.waitEvent( "Page.loadEventFired" );
 	
 	// 滚动页面
+	
   	var totalHeight = 0;
+  	// 每次滚动高度
   	var distance = 100;
-  	while(win.delay(100)){
+  	
+  	while(true){
 		cdp.Runtime.evaluate(
 			expression = string.format(" window.scrollBy(0, %s);", distance);
 		)
 		totalHeight += distance;
+		
 		var ret = cdp.Runtime.evaluate(
 			expression = "document.body.scrollHeight";
 			returnByValue = true;
 		)
-		if(!ret){
-			return ; 
-		}
+		
         if (totalHeight >= ret.result.value) {
           break;
         }
+        win.delay(100)
   	}
   	
 	

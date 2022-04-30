@@ -28,7 +28,8 @@ class async{
 			if(..fiber.status(f) == ..fiber.status.dead){
 				return ; 
 			}
-
+			
+			// 最后的 yield  到  return 之间可能存在消息循环、队列， 从而运行检查超时的定时器函数，所以要先删除任务 id
 			requestIds[id] = null;
 			assert( ..fiber.resume(f, ...));
 		}
@@ -55,11 +56,17 @@ class async{
 			}
 			var tick = ..time.tick();
 			
+			var removeIds = {}
 			for(id, info in requestIds){
 				if((tick - info.tick) > this.timeout){
-					this.resume(id, false, "timeout");
+					..table.push( removeIds, id )
 				}
 			}
+			
+			for(i=1;#removeIds;1){
+				this.resume(removeIds[i], false, "timeout");
+			}
+			
 		}
 		timer.enable()
 	}		

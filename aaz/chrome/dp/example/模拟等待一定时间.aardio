@@ -1,0 +1,90 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=385;bottom=140)
+winform.add(
+button={cls="button";text="运行";left=142;top=43;right=221;bottom=83;z=1}
+)
+/*}}*/
+
+io.open()
+
+import aaz.chrome.dp;
+
+var cdp, err = aaz.chrome.dp()
+if(!cdp){
+    winform.msgboxErr(err);
+	return ; 
+}
+
+var js = /**
+	const sleep = (ms) => {
+  		return new Promise(resolve => setTimeout(resolve, ms))
+	}
+	
+	async function sleepAsync(ms) {
+  		await sleep(ms)
+	}
+	
+	sleepAsync(%s)
+**/
+
+
+var wait = function(ms){
+	return cdp.Runtime.evaluate(
+		awaitPromise = true; // 执行是否应该等待结果值，并在等待的承诺被解决后返回。
+		expression = string.format(js, ms)
+	)
+}
+
+
+cdp.timeout = 20000;
+
+var task = function(){
+ 	// 打开浏览器
+	var ok, err = cdp.open()
+    if(!ok){
+         io.print("打开浏览器失败", err);
+    	return ; 
+    }
+	
+	// 连接浏览器
+    var ok, err = cdp.connect();
+    if(!ok){
+        io.print("连接浏览器失败", err);
+    	return ; 
+    }
+
+	// 订阅 Page 事件	
+	cdp.Page.enable();
+
+	// 打开网址
+	cdp.Page.navigate(
+		url = "https://www.baidu.com";
+	)
+
+	// 等待页面加载完成
+	cdp.waitEvent( "Page.loadEventFired" );
+
+	io.print("等待开始")
+	var tick = time.tick()
+	wait(5000)
+	io.print("等待结束，用时：",  time.tick()-tick )
+	
+	// 关闭浏览器
+	cdp.Browser.close(); 
+}
+
+winform.button.oncommand = function(id,event){
+	cdp.run(
+		task,
+		function(){
+			winform.button.disabled = true
+		},
+		function(){
+			winform.button.disabled = false
+		}
+	)
+}
+
+winform.show();
+win.loopMessage();

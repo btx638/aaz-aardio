@@ -38,10 +38,9 @@ class dp{
 					async.resume(t.id, t.result);
 				}
 			} // 订阅事件
-			elseif(t.method){
+			elseif(t.method){ 
 				async.resume(t.method, t.params)
-				
-				// 
+
 				if(methodsOfListen[t.method]){
 					async.run(methodsOfListen[t.method], null, null, t.params)
 				}
