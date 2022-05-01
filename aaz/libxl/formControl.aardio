@@ -1,0 +1,44 @@
+﻿
+namespace aaz.libxl;
+var _dll = ..aaz.libxl._dll;
+
+class formControl{
+	ctor(){
+	
+	};
+}
+namespace formControl{
+    _properties = {
+        objectType = {
+            _get = function(){
+            	return _dll.xlFormControlObjectType(owner.handle); 
+            }
+        };
+        checked = {
+            _get = function(){
+            	return !!_dll.xlFormControlChecked(owner.handle);
+            }
+            _set = function(v){
+            	_dll.xlFormControlSetChecked(owner.handle, v)
+            } 
+        };
+       	fmlaGroup = {
+            _get = function(){
+            	return ..raw.str( _dll.xlFormControlFmlaGroupP(owner.handle), true );
+            }
+            _set = function(v){
+            	_dll.xlFormControlSetFmlaGroupW(owner.handle, v);
+            }
+            
+       	};
+       	fmlaLink = {
+       	    _get = function(){
+       	    	
+       	    }
+       	    _set = function(v){
+       	    	
+       	    }
+       	    
+       	}
+    }	
+}

@@ -1,0 +1,171 @@
+﻿import util.metaProperty;
+
+namespace aaz.libquickjs;
+var _dll = _dll; 
+
+class value{
+	ctor( handle, context ){
+		if(!handle) return ; 
+		
+		this.context = context;
+		this.handle = handle;
+	};
+	
+	@_metaProperty;		
+}
+namespace value{    
+    /* all tags with a reference count are negative 
+    	所有带有引用计数的标记都是负数
+    */
+    JS_TAG_FIRST       = -11  /*第一个负标签*/
+    JS_TAG_BIG_DECIMAL = -11
+    JS_TAG_BIG_INT     = -10
+    JS_TAG_BIG_FLOAT   = -9
+    JS_TAG_SYMBOL      = -8
+    JS_TAG_STRING      = -7
+    JS_TAG_MODULE      = -3  /*内部使用*/
+    JS_TAG_FUNCTION_BYTECODE = -2  /*内部使用*/
+    JS_TAG_OBJECT      = -1
+    
+    JS_TAG_INT         = 0
+    JS_TAG_BOOL        = 1
+    JS_TAG_NULL        = 2
+    JS_TAG_UNDEFINED   = 3
+    JS_TAG_UNINITIALIZED = 4
+    JS_TAG_CATCH_OFFSET = 5
+    JS_TAG_EXCEPTION   = 6
+    JS_TAG_FLOAT64     = 7
+    /*
+如果 JS_NAN_BOXING ， 任何较大的标记都是FLOAT64
+*/
+    
+    class JSRefCountHeader {
+        int ref_count;
+    }
+
+    JS_FLOAT64_TAG_ADDEND = 2146959372/*0x7ff80000 - JS_TAG_FIRST + 1*/
+    JS_NAN = 0x7ff8000000000000 - ( 2146959372 << 32 )
+
+    
+    JS_VALUE_IS_NAN = function(v){
+    	var tag = v >> 32
+    	return tag == ( JS_NAN >> 32 ); 
+    }
+
+	JS_VALUE_GET_FLOAT64 = function(v){
+		var u = {
+			union value = {
+				LONG64 v;
+				double d;
+			}
+		}
+		u.value.v = v;
+		u.value.v = u.value.v + ..math.size64(JS_FLOAT64_TAG_ADDEND << 32);
+		return u.d; 
+	}
+	
+    
+    class JSMemoryUsage{
+    }
+    
+    class JSPropertyDescriptor{
+    	int flags;
+    	LONG64 value;
+    	LONG64 getter;
+    	LONG64 setter;
+    }
+
+	_properties = {
+		ptr = {
+			_get = function(){
+				return topointer(..raw.convert({LONG64 v = owner.handle}, {addr v}).v);
+			}
+		};
+		tag = {
+			_get = function(){
+				return tonumber(owner.handle >> 32) /*LONG64->INT*/ & 0xFFFFFFFF /*INT->int*/;
+			}	
+		}; 
+		hasRefCount = {
+			_get = function(){
+				return (owner.tag + 4294967296/*2**32*/ /*int->INT*/) >= (4294967285 /*JS_TAG_FIRST int->INT*/);
+			}
+			
+		};
+		isFloat64 = {
+			_get = function(){
+				return ((owner.tag-JS_TAG_FIRST) + 4294967296/*2**32*/ /*int->INT*/) >= 18/*JS_TAG_FLOAT64-JS_TAG_FIRST*/
+			}
+			
+		};
+		parseValue = function(){
+			var tag = owner.tag;
+			select( owner.tag ) {
+				case 0/*_JS_TAG_INT*/ {
+					return owner.toInt32(); 
+				}
+				case -7/*_JS_TAG_STRING*/ {
+					return owner.toCStringLen2(); 
+				}
+				case 1/*_JS_TAG_BOOL*/ {
+					return owner.toBool(); 
+				}
+				case 2/*_JS_TAG_NULL*/ {
+					return null; 
+				}
+				case 6/*_JS_TAG_EXCEPTION*/{
+					
+				}
+			}
+			if(owner.isFloat64 || tag>JS_TAG_FLOAT64){
+				var float64 = {double value};
+				_dll.JS_ToFloat64(owner.context, float64, owner.handle);
+				return float64.value; 
+			}
+		};
+		toBool = function(){
+			return _dll.JS_ToBoolB(owner.context, owner.handle);
+		};
+		toInt32 = function(){
+			var int32 = {int value};
+			var ok = _dll.JS_ToInt32(owner.context, int32, owner.handle);
+			return int32.value; 
+		};
+		toCStringLen2 = function(cesu8=0){
+			return ..raw.str(_dll.JS_ToCStringLen2P(owner.context, null, owner.handle, cesu8)); 
+		};
+		
+		isArray = {
+			_get = function(){ 
+				return _dll.JS_IsArray(owner.context, owner);
+			}
+		};
+		free = function(){			
+			if(owner.hasRefCount){
+				var ptr = owner.ptr;
+
+				var ret = ..raw.convert(ptr, JSRefCountHeader()); 
+				ret.ref_count--; 
+				..raw.convert(ret, ptr)
+
+				if(ret.ref_count <= 0){
+					_dll.__JS_FreeValue(owner.context, owner.handle);
+				}
+			}
+		};
+		dup = function(){
+			if(owner.hasRefCount){
+				var ptr = owner.ptr;
+
+				var ret = ..raw.convert(ptr, JSRefCountHeader()); 
+				ret.ref_count++; 
+				..raw.convert(ret, ptr)
+
+				return owner.handle; 
+			}
+		}
+			
+	} 
+	
+	_metaProperty = ..util.metaProperty( _properties );
+}

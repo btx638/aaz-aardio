@@ -1,0 +1,89 @@
+﻿import util.metaProperty;
+
+namespace aaz.libquickjs;
+var _dll = _dll;
+
+class context{
+    ctor(handle){
+    	if(!handle) return ; 
+    	this.handle = handle;
+    	..table.gc(this, "free");
+    };
+	free = function(){
+		if(this.handle){
+			_dll.JS_FreeContext(this.handle);	
+			this.handle = null;
+		}
+	};
+	call = function(funcObj, thisObj, argc, argv){
+		var jsValue = _dll.JS_CallL(this.handle, funcObj, thisObj, argc, argv);
+	};
+	invoke = function(thisVal, atom, argc, argv){
+		var jsValue = _dll.JS_InvokeL(this.handle, thisVal, atom, argc, argv);
+	};
+	callConstructor = function(funcObj, argc, argv){
+		var jsValue = _dll.JS_CallConstructorL(this.handle, funcObj, argc, argv);
+	};
+	callConstructor2 = function(funcObj, newTarget, argc, argv){
+		var jsValue = _dll.JS_CallConstructor2L(this.handle, funcObj, newTarget, argc, argv);
+	};
+	detectModule = function(input){
+		return _dll.JS_DetectModule(this.handle, input, #input); 
+	};	
+	eval = function(input, filename="<evalScript>", evalFlags=0){
+		return ..aaz.libquickjs.value(_dll.JS_EvalL(this.handle, input, #input , filename, evalFlags), this.handle);
+	};
+	evalThis = function( thisObj, input, filename="<evalScript>", evalFlags=0 ){
+		var jsValue = _dll.JS_EvalThisL(this.handle, thisObj, input, #input, filename, evalFlags)
+	};
+	isInstanceOf = function(val, obj){
+		return _dll.JS_IsInstanceOf(this.handle, val, obj); 
+	};
+	defineProperty = function(thisObj, prop, val, getter, setter, flags){
+		return _dll.JS_DefineProperty(this.handle, thisObj, prop, val, getter, setter, flags); 
+	};	
+	dup = function(){
+		return _dll.JS_DupContextP(this.handle);
+	};
+	setClassProto = function(classId, value){
+		_dll.JS_SetClassProto(this.handle, classId, value);
+	};
+	getClassProto = function(classId){
+		return ..aaz.libquickjs.value(_dll.JS_GetClassProtoP(this.handle, classId));
+	};
+	newBigInt64 = function(v){
+		return ..aaz.libquickjs.value(_dll.JS_NewBigInt64P(this.handle, v));; 
+	};
+	newBigUint64 = function(v){
+		return ..aaz.libquickjs.value(_dll.JS_NewBigUint64P(this.handle, v));; 
+	};
+	getException = function(){
+		return ..aaz.libquickjs.value(_dll.JS_GetException(this.handle));; 	
+	};
+	@_metaProperty;
+}
+namespace context{
+    _properties = {
+        _topointer = function(){
+        	return owner.handle; 
+        };
+        opaque = {
+            _get = function(){
+            	return _dll.JS_GetContextOpaqueP(owner.handle);
+            };
+            _set = function(v){
+            	_dll.JS_SetContextOpaque(owner.handle, v);
+            }
+        };
+        runtime = {
+            _get = function(){
+            	return ..aaz.libquickjs.runtime(_dll.JS_GetRuntimeP(owner.handle)); 
+            }
+        };
+        globalObject = function(){
+        	var jsValue = _dll.JS_GetGlobalObject(owner.handle);
+        };
+    } 
+    
+    _metaProperty = ..util.metaProperty(_properties);	
+}

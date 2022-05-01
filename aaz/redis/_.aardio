@@ -1,0 +1,159 @@
+﻿import wsock.tcp.client;
+
+namespace aaz;
+class redis{
+	ctor(){
+		..table.gc(this, "close")
+	};
+	close = function(){
+		if(this.tcpClient){
+			this.tcpClient.close();
+			this.tcpClient = null;
+		}
+	};
+	connect = function(ip="127.0.0.1", port=6379, timeout=3){
+		this.tcpClient := ..wsock.tcp.client();
+		if(!this.tcpClient.connectTimeout(ip, port, timeout)){
+			return false, "连接服务器失败"; 
+		}
+		return true;
+	};
+	setTimeouts = function(send=5000,receive=5000){
+		if(this.tcpClient){
+			return this.tcpClient.setTimeouts(send, receive); 
+		}
+	};
+	command = function(...){
+		var args = {...}; 
+
+		if( !this.tcpClient.write("*", #args, '\r\n') ) return false, ..wsock.err.lasterr(); 
+		for(i=1;#args;1){
+			if( !this.tcpClient.write("$", #args[i], '\r\n', args[i], '\r\n') ) return false, ..wsock.err.lasterr(); 
+		}
+		return this.readReply(); 
+	};
+	readReply = function(){
+		var prefix = this.tcpClient.read(1); 
+		if(!prefix) return false, ..wsock.err.lasterr();
+
+		var data = this.tcpClient.read() 
+		select(prefix) {
+			case '-'{ 
+				error(data, 2)
+			}
+			case '+'{
+				return data; 
+			}
+			case ':'{
+				return tonumber(data); 
+			} 
+			case '$'{
+				var size = tonumber(data);
+				if(size<0) return null; 
+				
+				var data = this.tcpClient.read(size)
+				if(!data) return false, ..wsock.err.lasterr();
+				
+				// 消耗末尾的 CRLF
+				if(!this.tcpClient.read(2)) return false, ..wsock.err.lasterr(); 
+				return data; 
+			}
+			case '*'{
+				var n = tonumber(data);
+				if(n<0) return null; 
+				
+				var tab = {};
+				for(i=1;n;1){
+					var res, err = this.readReply();	
+					if(res) tab[i] = res;
+					elseif(res === false) return false, err; 
+					elseif(res === null) tab[i] = null;	
+				}
+				return tab; 
+			}
+		}			
+	};
+	set = function(key, value){
+		var ret, err = this.command("SET", key, tostring(value));
+		return ret == "OK", err; 
+	};
+	setnx = function(key, value){
+		var ret, err = this.command("SETNX", key, tostring(value));
+		return ret == 1, err; 
+	};
+	setex = function(key, value, seconds){
+		var ret, err = this.command("SETEX", key, tostring(seconds), tostring(value)); 
+		return ret == "OK", err; 
+	};
+	psetex = function(key, value, seconds){
+		var ret, err = this.command("PSETEX", key, tostring(seconds), tostring(value)); 
+		return ret == "OK", err; 
+	};
+	ttl = function(key){
+		return this.command("TTL", key); 
+	};
+	pttl = function(key){
+		return this.command("PTTL", key); 
+	};
+	get = function(key, value){
+		return this.command("get", key);
+	};
+	hset = function(key, field, value, ...){
+		var ret, err;
+		
+		if(..table.type(field) == "object"){
+			var args = {}
+			for(k,v in field){
+				..table.push(args, tostring(k), tostring(v))
+			}
+			ret, err = this.command("HSET", key, ..table.unpack(args)); 
+		}
+		else {
+			ret, err = this.command("HSET", key, field, value, ...); 
+			
+		}
+
+		if(ret >= 0){
+			return true, ret; 
+		}
+		return false, err;
+	};
+	hget = function(key, field){
+		return this.command("HGET", key, field); 
+	}; 
+	hgetall = function(key){
+		var res, err = this.command("HGETALL", key);
+		if(res === false){
+			return res, err; 
+		}
+		
+		var ret = {};
+		for(i=1;#res;2){
+			var k = res[i];
+			var v = res[i+1];
+			ret[k] = v;
+		}
+		return ret;
+	};
+	scan = function(cursor, pattern, count){
+		
+	}
+	
+}
+
+// http://doc.redisfans.com/
+// http://doc.redisfans.com/topic/protocol.html
+// https://github.com/tporadowski/redis/releases
+// https://github.com/microsoftarchive/redis/releases
+
+/**intellisense()
+aaz.redis() = 创建 redis 客户端\n!aaz_redis.
+aaz.redis = redis 客户端
+end intellisense**/
+
+/**intellisense(!aaz_redis)
+set(.(key,value) = 将字符串值 value 关联到 key
+get(.(key) = 返回 key 所关联的字符串值，如果 key 不存在那么返回 null
+ttl(.(key) = 以秒为单位，返回给定 key 的剩余生存时间\n当 key 不存在时，返回 -2\n当 key 存在但没有设置剩余生存时间时，返回 -1
+pttl(.(key) = 以毫秒为单位，返回给定 key 的剩余生存时间\n当 key 不存在时，返回 -2\n当 key 存在但没有设置剩余生存时间时，返回 -1
+end intellisense**/

@@ -1,0 +1,46 @@
+import aaz.libxl;
+
+var book = aaz.libxl.createXmlBook();
+book.setKey()
+    
+var sheet = book.addSheet("my");
+
+sheet.writeStr(2, 1,"Country");
+sheet.writeStr(2, 2,"Road injures");
+sheet.writeStr(2, 3,"Smoking");
+sheet.writeStr(2, 4,"Suicide");
+
+sheet.writeStr(3, 1,"USA");     sheet.writeStr(4, 1,"UK"); 
+sheet.writeNum(3, 2, 64);         sheet.writeNum(4, 2, 94);
+sheet.writeNum(3, 3, 69);         sheet.writeNum(4, 3, 55);
+sheet.writeNum(3, 4, 49);         sheet.writeNum(4, 4, 64);
+
+sheet.writeStr(5, 1,"Germany"); sheet.writeStr(6, 1,"Switzerland");
+sheet.writeNum(5, 2, 88);         sheet.writeNum(6, 2, 93); 
+sheet.writeNum(5, 3, 46);         sheet.writeNum(6, 3, 54);
+sheet.writeNum(5, 4, 55);         sheet.writeNum(6, 4, 50);
+
+sheet.writeStr(7, 1,"Spain");   sheet.writeStr(8, 1,"Italy"); 
+sheet.writeNum(7, 2, 86);         sheet.writeNum(8, 2, 75); 
+sheet.writeNum(7, 3, 47);         sheet.writeNum(8, 3, 52);
+sheet.writeNum(7, 4, 69);         sheet.writeNum(8, 4, 71);
+
+sheet.writeStr(9, 1,"Greece");  sheet.writeStr(10, 1,"Japan");
+sheet.writeNum(9, 2, 67);         sheet.writeNum(10, 2, 91);
+sheet.writeNum(9, 3, 23);         sheet.writeNum(10, 3, 57);
+sheet.writeNum(9, 4, 87);         sheet.writeNum(10, 4, 36);
+
+var autoFilter = sheet.autoFilter();
+autoFilter.setRef(2, 10, 1, 4);
+
+// 显示道路伤害 < 70 或道 > 90 的国家/地区
+var column = autoFilter.column(2);
+column.setCustomFilter(3/*_OPERATOR_LESS_THAN*/,"70", 1/*_OPERATOR_GREATER_THAN*/,"90");
+
+autoFilter.setSort(2, true);
+
+sheet.applyFilter();
+
+book.save("/out.xlsx");
+
+book.release();

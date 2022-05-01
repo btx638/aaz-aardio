@@ -1,0 +1,17 @@
+﻿namespace aaz;
+namespace libquickjs{
+    // https://bellard.org/quickjs
+    // https://github.com/mengmo/QuickJS-Windows-Build
+    _dll = ..raw.loadDll($"~\lib\aaz\libquickjs\.res\libquickjs.dll", "libquickjs.dll", "cdecl");
+
+    namespace ..global{
+        import aaz.libquickjs.runtime;
+        import aaz.libquickjs.context;
+    	import aaz.libquickjs.value;
+    }
+   
+    newRuntime = function(){
+    	return ..aaz.libquickjs.runtime(_dll.JS_NewRuntimeP()); 
+    } 	
+}
+

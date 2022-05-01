@@ -1,0 +1,11 @@
+import console; 
+
+import aaz.redis;
+
+var redis = aaz.redis()
+redis.connect() 
+
+console.log( redis.setex("key1", "value", "2") )
+console.log(redis.get("key1"))
+
+console.pause(true);

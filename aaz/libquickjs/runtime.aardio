@@ -1,0 +1,51 @@
+﻿import util.metaProperty;
+
+namespace aaz.libquickjs;
+var _dll = _dll;
+
+class runtime{
+  	ctor(handle){
+      	if(!handle) return ;
+      	this.handle = handle;
+      	..table.gc( this, "free" );
+  	};
+	free = function(){
+		if(this.handle){
+			_dll.JS_FreeRuntime(this.handle);
+			this.handle = null;
+		}
+	};
+	newContext = function(){
+		return ..aaz.libquickjs.context(_dll.JS_NewContextP(this.handle));
+	};
+	@_metaProperty;
+}
+namespace runtime{
+    _properties = {
+        _topointer = function(){
+        	return owner.handle; 
+        };
+        info = {
+            _set = function(v){
+            	_dll.JS_SetRuntimeInfo(owner.handle, v);
+            }
+        };
+        memoryLimit = {
+            _set = function(v){
+            	_dll.JS_SetMemoryLimit(owner.handle, v);
+            }
+        }; 
+        gcThreshold = {
+            _set = function(v){
+            	_dll.JS_SetGCThreshold(owner.handle, v);
+            }
+        }; 
+        maxStackSize = {
+            _set = function(v){
+            	_dll.JS_SetMaxStackSize(owner.handle, v);
+            }
+        }; 
+    }
+    
+    _metaProperty = ..util.metaProperty(_properties);
+}

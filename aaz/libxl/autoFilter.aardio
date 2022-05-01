@@ -1,0 +1,77 @@
+﻿namespace aaz.libxl;
+
+var _dll = _dll;
+
+class autoFilter{ 
+	ctor(handle){
+		if(!handle) return ; 
+		this.handle = handle;
+	};	
+	getRef = function(){
+		var rowFirst = {int value};
+		var rowLast = {int value};
+		var colFirst = {int value};
+		var colLast = {int value};
+		
+		if(_dll.xlAutoFilterGetRef(this.handle, rowFirst, rowLast, colFirst, colLast) == 0 ){
+			return null; 
+		}
+		return 
+			rowFirst.value + 1,
+			rowLast.value + 1,
+			colFirst.value + 1,
+			colLast.value + 1;
+	};	
+	setRef = function(rowFirst, rowLast, colFirst, colLast){
+		_dll.xlAutoFilterSetRef(this.handle, rowFirst-1, rowLast-1, colFirst-1, colLast-1);
+	};	
+	column = function( colId ){
+		return ..aaz.libxl.filterColumn(_dll.xlAutoFilterColumnP(this.handle, colId-1));
+	};	
+	columnByIndex = function( index ){
+		return ..aaz.libxl.filterColumn(_dll.xlAutoFilterColumnByIndexP(this.handle, index-1));
+	};	
+	getSortRange = function(){
+		var rowFirst = {int value};
+		var rowLast = {int value};
+		var colFirst = {int value};
+		var colLast = {int value};
+		
+		if(_dll.xlAutoFilterGetSortRange(this.handle, rowFirst, rowLast, colFirst, colLast) == 0){
+			return null; 
+		}
+		
+		return 
+			rowFirst.value + 1,
+			rowLast.value + 1,
+			colFirst.value + 1,
+			colLast.value + 1;
+	};	
+	getSort = function(){
+		var columnIndex = {int value};
+		var descending = {int value};
+		
+		return 
+			_dll.xlAutoFilterGetSort(this.handle, columnIndex, descending),
+			columnIndex.value+1,
+			descending.value+1;
+	};	
+	setSort = function(columnIndex, descending){
+		return _dll.xlAutoFilterSetSortB(this.handle, columnIndex-1, descending);
+	};
+	addSort = function(columnIndex, descending){
+		return _dll.xlAutoFilterAddSort(this.handle, columnIndex-1, descending);; 
+	};
+	@_metaProperty;
+}
+namespace autoFilter{ 
+	_properties = {
+		columnSize = {
+			_get = function(){
+				return _dll.xlAutoFilterColumnSize(owner.handle); 
+			}
+		}
+	}
+	
+	_metaProperty = ..aaz.libxl.metaProperty(_properties);	
+}
