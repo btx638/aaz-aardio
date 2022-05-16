@@ -7,8 +7,8 @@
 
 #### libquickjs [quickjs](https://bellard.org/quickjs/) javascript 引擎
 
-#### libxl [libxl](https://www.libxl.com/) 是一个不用安装微软 excel 就能编辑 excel 文件的库
+#### libxl [libxl](https://www.libxl.com/) 是一个不用安装 excel 就能读取、编辑、生成 excel 文件的库
 
-#### redis [redis](https://redis.io/) 客户等
+#### redis [redis](https://redis.io/) 客户端
 
-#### libchakraCore [Chakra](https://github.com/chakra-core/ChakraCore) javascript 引擎
+#### libchakraCore [ChakraCore](https://github.com/chakra-core/ChakraCore) javascript 引擎
