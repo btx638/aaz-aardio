@@ -1,0 +1,65 @@
+﻿
+namespace aaz;
+class emitter{
+	ctor(groupName, user){
+		this._group = group(groupName);
+		this._user = user;
+	};
+	on = function(evtName, user, proc){
+		var events = this._group.getEvents(evtName)
+		
+		var t = type(user)
+		if(t == type.function){
+			..table.push(events, {
+				proc = user;
+			})
+		}
+		elseif(t == type.string){
+			if(type(proc) != type.function){
+				error("当参数@2是指定消息发送者时，参数@3必须是函数",2)
+			}
+			..table.push(events, {
+				user = user;
+				proc = proc;
+			})
+		}
+
+	};
+	emit = function(evtName, ...){
+		var events = this._group.getEvents(evtName)
+		for(i=1;#events;1){
+			var evt = events[i];
+			// 事件只能被特定用户调用
+			if(evt.user){
+				if(evt.user == this._user){
+					evt.proc(...)
+				}
+			}
+			else {
+				evt.proc(...)
+			}
+			
+		}	
+	};	
+}
+namespace emitter{
+	class group{
+		ctor(name){
+			if(__store__[name]){
+				return __store__[name]; 
+			}
+			__store__[name] = this;
+				
+			this._evt = {};
+		};
+		getEvents = function(name){
+			if(!this._evt[name]){
+				this._evt[name] = {}
+			}
+			return this._evt[name]; 
+		};
+	}
+	namespace group{
+		__store__ = {}	
+	}		
+}

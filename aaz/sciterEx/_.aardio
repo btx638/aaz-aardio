@@ -1,0 +1,146 @@
+﻿import util.metaProperty;
+import web.sciter;
+
+web.sciter.event._defaultHandler[ web.sciter.event.HANDLE_GROUPS.SCRIPTING_METHOD_CALL] = function(this,tag,he,prms){  
+	var xcallParams = raw.convert(prms, web.sciter.event.SCRIPTING_METHOD_PARAMS());
+	var handler = this[[ xcallParams.method_name ]];
+	// 找扩展本机函数
+	if(!handler){
+		handler = this[["__nativeFunctions__"]][[ xcallParams.method_name ]]
+	}
+	if( type(handler)!="function" ) return;
+	
+	var callOk,callRet;
+	// 在 wb 上调用时可为空
+	var scEle = he ? (element_t(he) ) //gc protect;
+	var argc = xcallParams.argc;
+
+	if( argc ){
+		var offset = 0;
+		var p = xcallParams.argv; // 参数数组指针
+		var tArgs = {};
+		for(i=1;argc;1){
+			var v = web.sciter.valueObjectLite();//禁止自动析构
+			
+			raw.convert(p,v,offset);
+			offset += 16/*..raw.sizeof( valueObjectLite_t() )*/ 
+			v = v.getValue();
+			tArgs[i] = v;
+		}
+		if(scEle){
+			callOk,callRet = call( handler,this,scEle, table.unpack(tArgs,1,argc) ) 
+		}
+		else {
+			callOk,callRet = call( handler,this, table.unpack(tArgs,1,argc) ) 
+		}
+		
+	}
+	else {
+		if(scEle){
+			callOk,callRet = call( handler,this,scEle )
+		}
+		else {
+			callOk,callRet = call( handler,this )
+		}
+		
+	}
+	
+	// 调用成功
+	if( callOk ){
+		if( callRet !== null ){
+			// 把本机函数的返回值类型转为 sciter 脚本类型
+			xcallParams.retval.setValue(callRet);
+			::CopyMemoryByStruct( topointer(prms,16/*retval offset*/),xcallParams.retval,16/* sizeof retval */)
+		
+		}
+	} 
+	elseif( callRet ){
+		errput(callRet,'Sciter call("' +xcallParams.method_name+ '") 错误:')
+	}
+	
+	return true; 
+} ;
+
+util.metaProperty.extend( web.sciter, {
+	defineNativeFuntion = function(name, func){
+		owner[["__nativeFunctions__"]][name] = func
+	};
+	publish = function(name, data, post=true){
+		var evt = web.sciter.event.BEHAVIOR_EVENT_PARAMS();
+		evt.name = name;
+		evt.cmd = 0xF0/*CUSTOM*/
+		evt.data = web.sciter.valueObject(data);
+
+        var ret,handled = ::Sciter.FireEvent(evt,post,false);
+        return ret && handled;
+	};
+})
+
+util.metaProperty.extend( web.sciter.valueObject,{
+	// js 调用本机函数传入了js函数类型的参数， 可以直接调用
+	xcall = function(url, thisObject, ...){ 
+		if(owner.type != 0xD/*T_OBJECT*/ || owner.units  != 4 /*UT_OBJECT_FUNCTION*/){
+			error("The value is not a script function",2);
+		}
+		
+		var args,args_s;
+		// 把参数转为静态数组
+		args = {...};
+		// 参数长度
+		var _,len = ..table.range(args); 
+		// 存在参数
+		if( len ) {
+			// 参数转为 sciter.value 类型
+			for( i=1;len;1 ){
+				args[i] = web.sciter.valueObject(args[i]); 
+			}
+			// 参数数组转为静态数组指针
+		//	args_s = ..raw.buffer( {struct args[]=args} ) ;
+		}
+
+		// 函数内部的 this 
+		var thisObject = web.sciter.valueObject(thisObject);
+		// 返回值
+		var retval = web.sciter.valueObject(); 
+		/***
+		/**
+ 		* ValueInvoke - function invocation (Sciter/TIScript).
+ 		* - VALUE* pval is a value of type T_OBJECT/UT_OBJECT_FUNCTION
+ 		* - VALUE* pthis - object that will be known as 'this' inside that function.
+ 		* - UINT argc, const VALUE* argv - vector of arguments to pass to the function. 
+ 		* - VALUE* pretval - parse/emit MAP value without enclosing '{' and '}' brackets.
+ 		* - LPCWSTR url - url or name of the script - used for error reporting in the script.
+ 		* Returns:
+ 		*   HV_OK, HV_BAD_PARAMETER or HV_INCOMPATIBLE_TYPE
+ 		*/
+		UINT SCAPI ValueInvoke( const VALUE* pval, VALUE* pthis, UINT argc, const VALUE* argv, VALUE* pretval, LPCWSTR url);
+		
+								INT(struct val,struct &this,INT argc,struct argv,struct &pretval,ustring url)
+		***/
+
+		if( 0/*_HL_HV_OK*/ == ::Sciter.ValueInvoke(owner, thisObject, #args, #args ? {struct args[]=args} : {} , retval, url) ){
+			// owner 是 clone 产生的，要手动清理
+			if(owner.clear != "disabled"){
+				owner.clear()
+			}
+			//owner.clear()
+			return retval;
+		}		
+	};
+})
+
+namespace aaz;
+class sciterEx{
+	ctor(...){
+		this = ..web.sciter(...);
+		this[["__nativeFunctions__"]] = {};
+	};
+}
+
+/**intellisense()
+aaz.sciterEx = web.sciter.
+aaz.sciterEx() = !sciterEx.
+!sciterEx = web.sciter().
+!sciterEx.defineNativeFuntion("函数名称", "函数") = 定义本机函数
+!sciterEx.publish("事件名称", 附加数据, 是否异步) = 发布全局事件
+end intellisense**/

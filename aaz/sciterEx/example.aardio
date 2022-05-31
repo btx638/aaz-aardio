@@ -1,0 +1,65 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="external 接口";right=1014;bottom=523)
+winform.add()
+/*}}*/
+
+import aaz.sciterEx;  
+import web.sciter.debug
+
+var wb = aaz.sciterEx( winform ); 
+wb.attachEventHandler(web.sciter.debug)
+ 
+// 定义本机函数， 可以在 sciter 脚本里面调用
+wb.defineNativeFuntion("add",function(a, b, onEnd){
+	onEnd(true, "我是回调函数的参数")
+	return a+b; 
+})
+
+// 定义本机函数，如果要返回多个值，由于 js 不支持多返回值，那么装在数组里
+wb.defineNativeFuntion("add2",function(a, b){
+	return {a;b}; 
+})
+
+wb.html = /**
+<body> 
+<button id="my-button">调用本机 add 函数</button> 
+<button id="my-button2">多返回值</button> 
+<script>
+
+var button = document.getElementById("my-button");
+button.addEventListener('click', () => { 
+    let ret = Window.this.xcall("add",2, 1, (ok, ret)=>{
+        console.log("本机调用完毕时的回调函数",ok, ret)
+    } )
+    console.log( "本机函数返回值" ,ret)
+})
+
+var button = document.getElementById("my-button2");
+button.addEventListener('click', () => { 
+    let [a,b] = Window.this.xcall("add2",2, 1)
+    console.log( "本机函数返回值" ,a,b)
+})
+
+document.onGlobalEvent("全局事件",(evt)=>{
+	console.log("受到来自本机发布的全局事件", evt.data)
+})
+
+</script>
+</body>
+**/
+
+// 3秒后发布全局事件
+winform.setTimeout( function(){
+	wb.publish("全局事件", "全局事件的附加数据")	
+}, 3000)
+
+
+// 关闭程序会触发
+table.gc(self, function(){
+	win.msgbox("GC")	
+})
+
+
+winform.show();	
+win.loopMessage();
