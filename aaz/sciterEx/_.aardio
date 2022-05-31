@@ -134,6 +134,22 @@ class sciterEx{
 	ctor(...){
 		this = ..web.sciter(...);
 		this[["__nativeFunctions__"]] = {};
+		
+		this.script = {
+			@{
+				_set = function(k,v){
+					if(type(k)!="string")error("字段名必须是字符串");
+					::Sciter.SetVariable(this.hwnd, k, ..web.sciter.valueObjectLite(v));
+				};
+				_get = function(k){
+					if(type(k)!="string")error("字段名必须是字符串");
+					
+					var v = ..web.sciter.valueObject();
+					::Sciter.GetVariable(this.hwnd, k, v);
+					return v.getValue();
+				};
+			};	
+		}
 	};
 }
 
