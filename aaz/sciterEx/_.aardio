@@ -1,65 +1,81 @@
 ﻿import util.metaProperty;
 import web.sciter;
 
-web.sciter.event._defaultHandler[ web.sciter.event.HANDLE_GROUPS.SCRIPTING_METHOD_CALL] = function(this,tag,he,prms){  
-	var xcallParams = raw.convert(prms, web.sciter.event.SCRIPTING_METHOD_PARAMS());
-	var handler = this[[ xcallParams.method_name ]];
-	// 找扩展本机函数
-	if(!handler){
-		handler = this[["__nativeFunctions__"]][[ xcallParams.method_name ]]
-	}
-	if( type(handler)!="function" ) return;
-	
-	var callOk,callRet;
-	// 在 wb 上调用时可为空
-	var scEle = he ? (element_t(he) ) //gc protect;
-	var argc = xcallParams.argc;
+var valueObjectLite = web.sciter.valueObjectLite;
+var valueObject = web.sciter.valueObject;
+var raw_convert = raw.convert;
+var table_unpack = table.unpack;
 
-	if( argc ){
-		var offset = 0;
-		var p = xcallParams.argv; // 参数数组指针
-		var tArgs = {};
-		for(i=1;argc;1){
-			var v = web.sciter.valueObjectLite();//禁止自动析构
+namespace web.sciter{
+	script = {
+		@{
+			_set = function(k,v){
+				if(type(k)=="string") ::Sciter.SetVariable(0, k, valueObjectLite(v));
+				else error("字段名必须是字符串");
+			};
+		};	
+	}	
+}
+
+namespace web.sciter.event{
+	_defaultHandler[HANDLE_GROUPS.SCRIPTING_METHOD_CALL] = function(this,tag,he,prms){  
+		var xcallParams = raw_convert(prms, SCRIPTING_METHOD_PARAMS());
+		var handler = this[[ xcallParams.method_name ]];
+		// 找扩展本机函数
+		if(!handler){
+			handler = this[["__nativeFunctions__"]][[ xcallParams.method_name ]]
+		}
+		if( type(handler)!="function" ) return;
+		
+		var callOk,callRet;
+		// 在 wb 上定义本机函数时为空
+		var scEle = he ? (element_t(he) ) //gc protect;
+		var argc = xcallParams.argc;
+	
+		if( argc ){
+			var offset = 0;
+			var p = xcallParams.argv; // 参数数组指针
+			var tArgs = {};
+			for(i=1;argc;1){
+				var v = valueObjectLite();//禁止自动析构
+				
+				raw_convert(p,v,offset);
+				offset += 16/*..raw.sizeof( valueObjectLite_t() )*/ 
+				v = v.getValue();
+				tArgs[i] = v;
+			}
+			if(scEle){
+				callOk,callRet = call( handler,this,scEle, table_unpack(tArgs,1,argc) ) 
+			}
+			else {
+				callOk,callRet = call( handler,this, table_unpack(tArgs,1,argc) ) 
+			}
 			
-			raw.convert(p,v,offset);
-			offset += 16/*..raw.sizeof( valueObjectLite_t() )*/ 
-			v = v.getValue();
-			tArgs[i] = v;
-		}
-		if(scEle){
-			callOk,callRet = call( handler,this,scEle, table.unpack(tArgs,1,argc) ) 
 		}
 		else {
-			callOk,callRet = call( handler,this, table.unpack(tArgs,1,argc) ) 
+			if(scEle){
+				callOk,callRet = call( handler,this,scEle )
+			}
+			else {
+				callOk,callRet = call( handler,this )
+			}
+			
+		}
+
+		if( callOk ){
+			if( callRet !== null ){
+				xcallParams.retval.setValue(callRet);
+				::CopyMemoryByStruct( topointer(prms,16/*retval offset*/),xcallParams.retval,16/* sizeof retval */)
+			
+			}
+		} 
+		elseif( callRet ){
+			errput(callRet,'Sciter call("' +xcallParams.method_name+ '") 错误:')
 		}
 		
-	}
-	else {
-		if(scEle){
-			callOk,callRet = call( handler,this,scEle )
-		}
-		else {
-			callOk,callRet = call( handler,this )
-		}
-		
-	}
-	
-	// 调用成功
-	if( callOk ){
-		if( callRet !== null ){
-			// 把本机函数的返回值类型转为 sciter 脚本类型
-			xcallParams.retval.setValue(callRet);
-			::CopyMemoryByStruct( topointer(prms,16/*retval offset*/),xcallParams.retval,16/* sizeof retval */)
-		
-		}
-	} 
-	elseif( callRet ){
-		errput(callRet,'Sciter call("' +xcallParams.method_name+ '") 错误:')
-	}
-	
-	return true; 
-} ;
+		return true; 
+	}    	
+}
 
 util.metaProperty.extend( web.sciter, {
 	defineNativeFuntion = function(name, func){
@@ -69,14 +85,14 @@ util.metaProperty.extend( web.sciter, {
 		var evt = web.sciter.event.BEHAVIOR_EVENT_PARAMS();
 		evt.name = name;
 		evt.cmd = 0xF0/*CUSTOM*/
-		evt.data = web.sciter.valueObject(data);
+		evt.data = valueObject(data);
 
         var ret,handled = ::Sciter.FireEvent(evt,post,false);
         return ret && handled;
 	};
 })
 
-util.metaProperty.extend( web.sciter.valueObject,{
+util.metaProperty.extend( valueObject,{
 	// js 调用本机函数传入了js函数类型的参数， 可以直接调用
 	xcall = function(url, thisObject, ...){ 
 		if(owner.type != 0xD/*T_OBJECT*/ || owner.units  != 4 /*UT_OBJECT_FUNCTION*/){
@@ -92,16 +108,16 @@ util.metaProperty.extend( web.sciter.valueObject,{
 		if( len ) {
 			// 参数转为 sciter.value 类型
 			for( i=1;len;1 ){
-				args[i] = web.sciter.valueObject(args[i]); 
+				args[i] = valueObject(args[i]); 
 			}
 			// 参数数组转为静态数组指针
 		//	args_s = ..raw.buffer( {struct args[]=args} ) ;
 		}
 
 		// 函数内部的 this 
-		var thisObject = web.sciter.valueObject(thisObject);
+		var thisObject = valueObject(thisObject);
 		// 返回值
-		var retval = web.sciter.valueObject(); 
+		var retval = valueObject(); 
 		/***
 		/**
  		* ValueInvoke - function invocation (Sciter/TIScript).
@@ -139,12 +155,12 @@ class sciterEx{
 			@{
 				_set = function(k,v){
 					if(type(k)!="string")error("字段名必须是字符串");
-					::Sciter.SetVariable(this.hwnd, k, ..web.sciter.valueObjectLite(v));
+					::Sciter.SetVariable(this.hwnd, k, valueObjectLite(v));
 				};
 				_get = function(k){
 					if(type(k)!="string")error("字段名必须是字符串");
 					
-					var v = ..web.sciter.valueObject();
+					var v = valueObject();
 					::Sciter.GetVariable(this.hwnd, k, v);
 					return v.getValue();
 				};
