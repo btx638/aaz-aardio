@@ -2,11 +2,11 @@
 namespace aaz;
 class emitter{
 	ctor(groupName, user){
-		this._group = group(groupName);
-		this._user = user;
+		this.__emitterGroup__ = group(groupName);
+		this.__emitterUser__ = user;
 	};
 	on = function(evtName, user, proc){
-		var events = this._group.getEvents(evtName)
+		var events = this.__emitterGroup__.getEvents(evtName)
 		
 		var t = type(user)
 		if(t == type.function){
@@ -26,12 +26,12 @@ class emitter{
 
 	};
 	emit = function(evtName, ...){
-		var events = this._group.getEvents(evtName)
+		var events = this.__emitterGroup__.getEvents(evtName)
 		for(i=1;#events;1){
 			var evt = events[i];
 			// 事件只能被特定用户调用
 			if(evt.user){
-				if(evt.user == this._user){
+				if(evt.user == this.__emitterUser__){
 					evt.proc(...)
 				}
 			}
@@ -40,26 +40,41 @@ class emitter{
 			}
 			
 		}	
-	};	
+	};
+	bindSender = function(sender){
+		return binder(this, sender);
+	};		
 }
 namespace emitter{
 	class group{
 		ctor(name){
-			if(__store__[name]){
-				return __store__[name]; 
-			}
-			__store__[name] = this;
-				
-			this._evt = {};
+			if(name){
+				if(__store__[name]){
+					return __store__[name]; 
+				}
+				__store__[name] = this;	
+			}	
+			this._evts = {};
 		};
 		getEvents = function(name){
-			if(!this._evt[name]){
-				this._evt[name] = {}
+			if(!this._evts[name]){
+				this._evts[name] = {}
 			}
-			return this._evt[name]; 
+			return this._evts[name]; 
 		};
 	}
 	namespace group{
 		__store__ = {}	
+	}
+	
+	class binder{
+		ctor(emitter, sender){
+			this.emitter = emitter;
+			this.sender = sender;
+		};
+		on = function(evtName, proc){
+			this.emitter.on(evtName, this.sender, proc )
+			return this; 	
+		}
 	}		
 }
