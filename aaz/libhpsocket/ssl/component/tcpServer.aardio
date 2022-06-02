@@ -11,7 +11,7 @@ class tcpServer{
 		}
 		elseif(listener){
 			this.pServer = _dll.Create_HP_SSLServerP(listener);
-			..table.gc( this, "destroy" );
+	//		..table.gc( this, "destroy" );
 		}
 		else {
 			error( "请指定参数1 pServer 或参数2 pListener", 2);
