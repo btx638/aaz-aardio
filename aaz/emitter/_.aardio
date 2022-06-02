@@ -78,3 +78,16 @@ namespace emitter{
 		}
 	}		
 }
+
+/**intellisense(aaz)
+emitter = 对象通讯
+emitter() = 创建并加入匿名组，仅能限于对象内部通讯\n!aazemitter.
+emitter(.("组名") = 加入指定组，多个对象互相通讯\n!aazemitter.
+emitter(.("组名", "用户名") = 加入指定组，多个对象互相通讯，并指定自己的用户名\n!aazemitter.
+end intellisense**/
+
+/**intellisense(!aazemitter)
+on(.("事件名称", 事件处理函数) = 订阅事件，并指定处理函数
+on(.("事件名称",  "用户名", 事件处理函数) = 订阅事件，仅接收指定用户名发出的事件，并指定事件处理函数
+emit(.("事件名称", 不定参数) = 触发事件，并把参数传递给处理函数
+end intellisense**/

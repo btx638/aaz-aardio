@@ -1,0 +1,26 @@
+import console
+import aaz.emitter
+
+class cls{
+	ctor(){
+		// 参数为空，创建匿名事件组，仅限对象自己使用
+		this = ..aaz.emitter()
+	};
+	go = function(param){
+		// 触发事件
+		this.emit("go", param)
+		
+		return true; 
+	}
+}
+
+var obj = cls()
+
+// 订阅事件
+obj.on("go",function(param){
+	console.log("go 事件触发了", "参数：", param )
+})
+
+obj.go("aaaa")
+
+execute("pause")

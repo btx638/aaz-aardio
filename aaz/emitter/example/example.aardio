@@ -1,0 +1,65 @@
+io.open()
+
+import aaz.emitter;
+
+class clsA{
+	ctor(){
+		// 加入组并指定用户名，则 emit 消息时自带用户名
+		var emitter = ..aaz.emitter("组名", "用户A")
+		// 只接收组里的 用户C 的消息
+		emitter.on("聊天", "用户C", function(str){
+			..io.print("A收到C聊天：" ++ str)	
+		})
+		
+		emitter.on("聊天", "用户D", function(str){
+			..io.print("A收到D聊天：" ++ str)	
+		})
+	};
+	
+}
+
+class clsB{
+	ctor( ){
+		// 只入组且不指定用户名， 则 emit 消息时不含用户名
+		var emitter = ..aaz.emitter("组名")	
+		// 因为不指定信息发送者，则收到组的所有消息
+		emitter.on("聊天", function(str){
+			..io.print("B收到聊天：" ++ str)	
+		})	
+	};
+}
+
+class clsC{
+	ctor(){
+		// 加入组并指定用户名，则 emit 消息时自带用户名
+		var emitter = ..aaz.emitter("组名", "用户C")	
+	};
+	talk = function(str){
+		// 发送消息到组， 并且包含用户名
+		emitter.emit("聊天",str)
+	}
+	
+}
+
+class clsD{
+	ctor(){
+		// 加入组并指定用户名，则 emit 消息时自带用户名
+		var emitter = ..aaz.emitter("组名", "用户D")	
+	};
+	talk = function(str){
+		// 发送消息到组， 并且包含用户名
+		emitter.emit("聊天",str)
+	}
+	
+}
+
+var objA = clsA()
+var objB = clsB()
+var objC = clsC()
+var objD = clsD()
+
+// 用户C 发布了一个消息
+objC.talk( "吃了吗")
+objD.talk( "吃了吗")
+
+execute("pause")
