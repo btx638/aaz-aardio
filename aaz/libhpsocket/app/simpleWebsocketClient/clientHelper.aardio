@@ -35,7 +35,7 @@ var saveWsUpgradeRequestKey = function(component, wsKey){
 
 sendWsUpgradeRequest = function(component){
 	var userdata = readUserdata(component);
-	var wsPath = userdata.wsPath;
+	var wsPath = userdata.wsPath; ..io.print(wsPath)
 	var baseHeaders;
 	var origin = userdata.origin;
 	if(origin){

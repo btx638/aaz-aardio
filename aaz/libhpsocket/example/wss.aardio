@@ -28,8 +28,19 @@ ws.on("close", function(){
 	winform.richedit.print("关闭")
 })
 
+/**
+wss://stream49.forexpros.com/echo/475/uul4qugz/websocket
+	var s = //{"_event":"bulk-subscribe","tzID":8,"message":"pid-0:%%isOpenExch-103:%%isOpenExch-54:%%pid-1:%%isOpenExch-1002:%%pid-2:%%pid-3:%%pid-5:%%pid-7:%%pid-9:%%pid-10:%%pid-169:%%isOpenExch-1:%%pid-20:%%isOpenExch-2:%%pid-166:%%pid-172:%%isOpenExch-4:%%pid-27:%%isOpenExch-3:%%pid-167:%%isOpenExch-9:%%pid-178:%%isOpenExch-20:%%pid-2111:%%isOpenExch-1001:%%pid-961728:%%pid-1817:%%pid-8830:%%isOpenExch-1004:%%pid-8836:%%pid-8831:%%pid-8849:%%pid-8833:%%pid-8862:%%pid-8832:%%pid-941155:%%pid-102047:%%isOpenExch-21:%%pid-6378:%%pid-102911:%%pid-6435:%%pid-26490:%%pid-6408:%%pid-40820:%%pid-28930:%%pid-179:%%pid-1175152:%%isOpenExch-152:%%pid-1175153:%%pid-8827:%%pid-6369:%%pid-243:%%pid-267:%%pid-7888:%%pid-284:%%pid-352:%%pid-8916:%%pid-1089835:%%pid-2186:%%pid-962711:%%pid-1112836:%%pid-1156303:%%pid-104412:%%pidExt-2186:%%isOpenExch-40:%%cmt-6-5-2186:"}
+	ws.send(s);
+**/
+
 ws.on("message", function(msg){
 	winform.richedit.print("接收：", msg)
+	if(msg == "o"){
+		var s = //{"_event":"bulk-subscribe","tzID":8,"message":"pid-0:%%isOpenExch-103:%%isOpenExch-54:%%pid-1:%%isOpenExch-1002:%%pid-2:%%pid-3:%%pid-5:%%pid-7:%%pid-9:%%pid-10:%%pid-169:%%isOpenExch-1:%%pid-20:%%isOpenExch-2:%%pid-166:%%pid-172:%%isOpenExch-4:%%pid-27:%%isOpenExch-3:%%pid-167:%%isOpenExch-9:%%pid-178:%%isOpenExch-20:%%pid-2111:%%isOpenExch-1001:%%pid-961728:%%pid-1817:%%pid-8830:%%isOpenExch-1004:%%pid-8836:%%pid-8831:%%pid-8849:%%pid-8833:%%pid-8862:%%pid-8832:%%pid-941155:%%pid-102047:%%isOpenExch-21:%%pid-6378:%%pid-102911:%%pid-6435:%%pid-26490:%%pid-6408:%%pid-40820:%%pid-28930:%%pid-179:%%pid-1175152:%%isOpenExch-152:%%pid-1175153:%%pid-8827:%%pid-6369:%%pid-243:%%pid-267:%%pid-7888:%%pid-284:%%pid-352:%%pid-8916:%%pid-1089835:%%pid-2186:%%pid-962711:%%pid-1112836:%%pid-1156303:%%pid-104412:%%pidExt-2186:%%isOpenExch-40:%%cmt-6-5-2186:"}
+		ws.send(s);
+		io.print("213213")
+	}
 })
 
 

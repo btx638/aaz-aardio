@@ -3,7 +3,6 @@
 namespace aaz.libhpsocket.app.simpleWebsocketServer;
 class base{
 	ctor(listener, component){
-				
 		listener.onThreadCreated = function(sessionId){
 			import thread.command;
 			import aaz.libhpsocket.app.simpleWebsocketServer.helper;
@@ -63,13 +62,8 @@ class base{
 			_serverHelper.onClose(component, connId, operation, errorCode);
 			_postUi("close", connId)
 		}
-	
-		var _thCmd = ..thread.command();
-		..table.gc(this, "close");
-	};
-	close = function(){
-		component.destroy();
-		listener.destroy();
+		
+		var thCmd = ..thread.command();
 	};
 	stop = function(){
 		return component.stop();; 
@@ -84,12 +78,7 @@ class base{
 		return component.sendWsMessage(connId, data);
 	};
 	on = function(name, callback){
-		_thCmd[listener._sessionId ++ name] = callback;
+		thCmd[listener._sessionId ++ name] = callback;
 	};	
-}
-namespace base{
-    setListener = function(listener){
-    	
-    }   	
 }
 

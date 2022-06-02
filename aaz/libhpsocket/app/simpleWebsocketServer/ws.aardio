@@ -8,6 +8,6 @@ class ws{
 		var listener = ..aaz.libhpsocket.listener.httpServer();
 		var component = ..aaz.libhpsocket.component.httpServer(listener);
 		
-		this = ..aaz.libhpsocket.app.simpleWebsocketServer.base(listener, component);
+		this = ..aaz.libhpsocket.app.simpleWebsocketServer.base(listener, component);	
 	};
 }

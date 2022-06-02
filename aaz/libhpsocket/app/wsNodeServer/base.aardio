@@ -8,6 +8,8 @@ class base{
 		this._onlineNodeIds = {};
 		var eventCallback = {};
 		
+		var sysCall = {};
+		
 		this._wsServer.on("message", function(connId, msg){
 			var tab = ..web.json.parse(msg);
 			select(tab.type) {
@@ -25,6 +27,11 @@ class base{
 					}
 					this.sendTo(name, tab.data);
 				}
+				case "system"{
+					if(sysCall[tab.sender]){
+						sysCall[tab.sender]( tab.data )
+					}
+				}
 			}
 		})
 		
@@ -35,6 +42,8 @@ class base{
 				if(eventCallback.nodeUpdate) eventCallback.nodeUpdate(this._nodes);
 			}
 		})
+		
+
 	};
 	addNode = function(name, connId){
 		if(this._onlineNodeIds[connId] == name){
@@ -43,14 +52,16 @@ class base{
 		if(!this._nodes[name]){
 			this._nodes[name] = {};
 		}
-		this._onlineNodeIds[connId] = name;
 		..table.push(this._nodes[name], connId);
+		
+		this._onlineNodeIds[connId] = name;
+		
 		return true; 	
 	};
 	removeNodeById = function(connId){
 		var name = this._onlineNodeIds[connId];
 		if(name){
-			..table.removeByValue(this._nodes[name], connId)
+			..table.removeByValue(this._nodes[name], connId) 
 			if(!#this._nodes[name]){
 				this._nodes[name] = null
 			}
@@ -81,6 +92,20 @@ class base{
 	
 	on = function(name, callback){
 		eventCallback[name] = callback;
-	}	
+	};
+	onNode = function(name, func){
+		sysCall[name] = func
+	};
+	send = function(name, data){
+		for(i=1;#this._nodes[name];1){
+			var id = this._nodes[name][i];
+			if(this._onlineNodeIds[id]){
+				this.sendJson(id, {
+					type = "server";
+					data = data;
+				});
+			}
+		}
+	};			
 }
 

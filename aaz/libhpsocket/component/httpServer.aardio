@@ -11,16 +11,16 @@ class httpServer{
 		}
 		elseif(listener){
 			this.pServer = _dll.Create_HP_HttpServerP(listener);
-			..table.gc(this, "destroy");
+	//		..table.gc(this, "destroy");
 		}
 		else {
 			error("请指定参数@1 pServer 或参数@2 pListener", 2);
 		}
 	};
-	destroy = function(){
+	destroy = function(info){
 		if(this.pServer){
 			_dll.Destroy_HP_HttpServer(this.pServer);
-			this.pServer = null;
+			this.pServer = null;	
 		}
 	};
 	@_metaProperty;

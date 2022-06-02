@@ -4,7 +4,7 @@ import win.ui;
 namespace aaz.libhpsocket.app.wsNodeClient;
 class base{
 	ctor(wsClient){
-
+		var serverCall = {}
 		this._wsClient = wsClient;
 		this.eventCallback = {};
 		this.autoRetry = false;
@@ -18,6 +18,7 @@ class base{
 		}
 		
 		var _beginTranslateMessage = function(msg){
+			// 
 			if(this.eventCallback["message"]){
 				this.eventCallback["message"](msg);
 			}
@@ -42,22 +43,28 @@ class base{
 		)
 	};
 	sendJson = function(msg){
-		var json = ..web.json.stringify(msg)
-		return this._wsClient.send(json);
+		return this._wsClient.send(..web.json.stringify(msg));
 	};
 	register = function(name){
-		return this.sendJson(
+		var ok = this.sendJson(
 			type = "register";
 			name = name;
 		);
+		if(ok){
+			this.sender = name;	
+		} 
+		return ok
 	};
-	sendTo = function(name, data){
+	sendTo = function(receiver, data){
 		return this.sendJson(
 			type = "normal";
-			name = name;
+			sender = this.sender;
+			receiver = receiver;
+			name = receiver;
 			data = data;
 		);
 	};
+
 	connect = function(url){
 		this.url = url;
 		return this._wsClient.connect(url); 
@@ -68,6 +75,16 @@ class base{
 			return ; 
 		}
 		this.eventCallback[name] = callback;
+	}
+	sys = function(data){
+		return this.sendJson(
+			type = "system";
+			sender = this.sender;
+			data = data;
+		);	
+	}
+	onSys = function(name, func){
+		serverCall[name] = func;
 	}	
 }
 namespace base{

@@ -21,12 +21,12 @@ class listener{
 					global.import(owner.componentClassPath);
 					__componentClass__ = eval(owner.componentClassPath);
 
-					if(owner.threadGlobal){
+					if( owner.threadGlobal ){
 						..table.mix(global, owner.threadGlobal);
 						owner.threadGlobal = null;
 					}
 					
-					if(owner.onThreadCreated){
+					if( owner.onThreadCreated ){
 						owner.onThreadCreated(owner.sessionId);
 						owner.onThreadCreated = null;
 						owner.sessionId = null;
