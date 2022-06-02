@@ -1,0 +1,12 @@
+﻿
+namespace aaz.emitter;
+class binder{
+	ctor(emitter, sender){
+		this.emitter = emitter;
+		this.sender = sender;
+	};
+	on = function(evtName, proc){
+		this.emitter.on(evtName, this.sender, proc )
+		return this; 	
+	}
+}

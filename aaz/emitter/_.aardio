@@ -2,36 +2,41 @@
 namespace aaz;
 class emitter{
 	ctor(groupName, user){
-		this.__emitterGroup__ = group(groupName);
-		this.__emitterUser__ = user;
-	};
+		var _group = ..aaz.emitter.group(groupName);
+		var _emitterUser = user;
+	}
 	on = function(evtName, user, proc){
-		var events = this.__emitterGroup__.getEvents(evtName)
-		
-		var t = type(user)
-		if(t == type.function){
-			..table.push(events, {
-				proc = user;
-			})
+		if(type(evtName) == type.function){
+			return ; 
 		}
-		elseif(t == type.string){
+		
+		if(type(evtName) != type.string){
+			error("参数@1事件名称必须是字符串",2)
+		}
+		
+		var events = _group.getEvents(evtName);
+		var p2T = type(user);
+		
+		if(p2T == type.function){
+			..table.push(events, {proc = user;})
+			return ; 
+		}
+		
+		if(p2T == type.string){
 			if(type(proc) != type.function){
 				error("当参数@2是指定消息发送者时，参数@3必须是函数",2)
 			}
-			..table.push(events, {
-				user = user;
-				proc = proc;
-			})
-		}
-
+			..table.push(events, {user = user;proc = proc;})
+			return ; 
+		}	
 	};
 	emit = function(evtName, ...){
-		var events = this.__emitterGroup__.getEvents(evtName)
+		var events = _group.getEvents(evtName)
 		for(i=1;#events;1){
 			var evt = events[i];
 			// 事件只能被特定用户调用
 			if(evt.user){
-				if(evt.user == this.__emitterUser__){
+				if(evt.user == _emitterUser){
 					evt.proc(...)
 				}
 			}
@@ -42,42 +47,11 @@ class emitter{
 		}	
 	};
 	bindSender = function(sender){
-		return binder(this, sender);
+		return ..aaz.emitter.binder(this, sender);
 	};		
 }
-namespace emitter{
-	class group{
-		ctor(name){
-			if(name){
-				if(__store__[name]){
-					return __store__[name]; 
-				}
-				__store__[name] = this;	
-			}	
-			this._evts = {};
-		};
-		getEvents = function(name){
-			if(!this._evts[name]){
-				this._evts[name] = {}
-			}
-			return this._evts[name]; 
-		};
-	}
-	namespace group{
-		__store__ = {}	
-	}
-	
-	class binder{
-		ctor(emitter, sender){
-			this.emitter = emitter;
-			this.sender = sender;
-		};
-		on = function(evtName, proc){
-			this.emitter.on(evtName, this.sender, proc )
-			return this; 	
-		}
-	}		
-}
+import aaz.emitter.group;
+import aaz.emitter.binder;
 
 /**intellisense(aaz)
 emitter = 对象通讯

@@ -1,0 +1,22 @@
+﻿
+namespace aaz.emitter;
+class group{
+	ctor(name){
+		if(name){
+			if(__store__[name]){
+				return __store__[name]; 
+			}
+			__store__[name] = this;	
+		}	
+		this._evts = {};
+	};
+	getEvents = function(name){
+		if(!this._evts[name]){
+			this._evts[name] = {}
+		}
+		return this._evts[name]; 
+	};
+}
+namespace group{
+	__store__ = {}	
+}
