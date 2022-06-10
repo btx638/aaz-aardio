@@ -6,11 +6,19 @@ var valueObject = web.sciter.valueObject;
 var raw_convert = raw.convert;
 var table_unpack = table.unpack;
 
+/**
+值的传递原则：
+
+本机 -> 脚本   除非先把值复制一份再传递给脚本，否则禁止在本机自动析构， 让脚本自己析构
+脚本 -> 本机   在本机自动析构
+**/
+
+
 namespace web.sciter{
 	script = {
 		@{
 			_set = function(k,v){
-				if(type(k)=="string") ::Sciter.SetVariable(0, k, valueObjectLite(v));
+				if(type(k)=="string") ::Sciter.SetVariable(0, k, valueObjectLite(v)); //禁止自动析构
 				else error("字段名必须是字符串");
 			};
 		};	
@@ -64,6 +72,7 @@ namespace web.sciter.event{
 
 		if( callOk ){
 			if( callRet !== null ){
+				// 把返回值传给脚本
 				xcallParams.retval.setValue(callRet);
 				::CopyMemoryByStruct( topointer(prms,16/*retval offset*/),xcallParams.retval,16/* sizeof retval */)
 			
@@ -85,9 +94,9 @@ util.metaProperty.extend( web.sciter, {
 		var evt = web.sciter.event.BEHAVIOR_EVENT_PARAMS();
 		evt.name = name;
 		evt.cmd = 0xF0/*CUSTOM*/
-		evt.data = valueObject(data);
+		evt.data = valueObjectLite(data); // 这里必须禁止自动析构
 
-        var ret,handled = ::Sciter.FireEvent(evt,post,false);
+        var ret,handled = ::Sciter.FireEvent(evt, post, false); 
         return ret && handled;
 	};
 })
@@ -143,6 +152,80 @@ util.metaProperty.extend( valueObject,{
 			return retval;
 		}		
 	};
+	setValue = function(v,units,dataType,ownerObject){  
+      	var ta = type(v); 
+      	if( ta == "string" ){
+      		owner.setString(v);
+      	}
+      	elseif( ta == "number" ){
+      		if( type(units) == type.string ){
+      			units = VALUE_UNIT_TYPE[units];
+      		}; 
+      		if( ! ( units && dataType) ){
+      			var re,oldType,oldUnits= ::Sciter.ValueType( owner,0,0 );
+      			if(!units) units = oldUnits : 0;
+      			
+      			
+      			if(!dataType){
+      				if( oldType )
+      					dataType = oldType;
+      				else{
+      					var n,f = ..math.modf(v);
+      					dataType = f ? 4/*_HL_T_FLOAT*/ : 3/*_HL_T_INT*/; 
+      				}
+      			}
+      		}
+
+      		if( dataType == 3/*_HL_T_INT*/ ){
+      			owner.setInt32(v,units)
+      		}
+      		elseif( dataType == 4/*_HL_T_FLOAT*/){
+      			owner.setNumber(v,units)
+      		}
+      		else{
+      			owner.setLong64(v,units)
+      		} 
+      	}
+      	elseif( ta == "boolean" ){
+      		::Sciter.ValueIntDataSet(owner, v?1:0, 2/*_HL_T_BOOL*/, 0); 
+      	}
+      	elseif( ta ==  "table" ){ 
+      		
+      		if( ( v@ == _metaProperty ) && ( v._struct == owner._struct ) ){
+      			::Sciter.ValueCopy(owner,v);
+      		}
+      		elseif( ..time.istime(v) ){
+      			owner.setTime( v );
+      		}
+      		elseif(..web.sciter.element.is(v)){ 
+      			owner.setEle( v );
+      		} 
+      		else{
+      			if( ..table.isArray(v) ){
+      				for(i=1;#v;1){
+      					::Sciter.ValueNthElementValueSet( owner,i-1,valueObjectLite( v[i] ) );
+      				} 
+      			}
+      			else {
+      				for name,value in ..table.eachName(v){
+      					::Sciter.ValueSetValueToKey(owner,valueObjectLite(name),valueObjectLite(value,,,v)); 
+      				}
+      			}
+      		}
+      	}
+      	elseif( ta ==  "null" ){ 
+      		::Sciter.ValueClear(owner);
+      	}
+      	elseif( ta == "function" ){
+      		ValueNativeFunctorSet(owner,v,ownerObject);
+      	}
+      	elseif( ta  == "buffer" ){
+      		owner.setBinary(v);
+      	}
+      	else {
+      		error("错误的参数类型",2)
+      	};
+    };
 })
 
 namespace aaz;
@@ -155,7 +238,7 @@ class sciterEx{
 			@{
 				_set = function(k,v){
 					if(type(k)!="string")error("字段名必须是字符串");
-					::Sciter.SetVariable(this.hwnd, k, valueObjectLite(v));
+					::Sciter.SetVariable(this.hwnd, k, valueObjectLite(v)); //禁止自动析构
 				};
 				_get = function(k){
 					if(type(k)!="string")error("字段名必须是字符串");
