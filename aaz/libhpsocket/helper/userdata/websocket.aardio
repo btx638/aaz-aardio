@@ -1,0 +1,10 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.helper.userdata.base;
+
+namespace aaz.libhpsocket.helper.userdata;
+class websocket{
+	ctor(userData){
+		this = ..aaz.libhpsocket.helper.userdata.base(userData);
+	}
+	BYTE wsKey[24];
+}

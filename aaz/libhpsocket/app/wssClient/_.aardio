@@ -1,0 +1,113 @@
+﻿
+namespace aaz.libhpsocket.app;
+class wssClient{
+	ctor(helper){
+		__helper__ = helper;
+		
+		var listener = ..aaz.libhpsocket.ssl.listener.httpClient(); 
+		listener.threadGlobal = {
+			__helper__ = helper;
+		}
+		listener.onThreadCreated = function(sessionId){
+			import thread.command;
+			
+			var cacheName = {}
+			__postUi__ = function(name, ...){
+				if(!cacheName[name]){
+					cacheName[name] = name ++ sessionId;
+				}
+				thread.command.post( cacheName[name], ... );
+			}
+		}
+
+		listener.onHandShake = function(component, connId){
+			return __helper__.onHandShake(component);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			return __helper__.onUpgrade(component, upgradeType);	
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){
+			return __helper__.onWsMessageBody(component, pData, len);	
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			return __helper__.onWsMessageComplete(component);
+		}
+		
+		listener.onClose = function(component, connId, enOperation, errCode){
+			return __helper__.onClose(component, connId, enOperation, errCode);
+		}
+		
+		var component = ..aaz.libhpsocket.ssl.component.httpClient(listener);
+		component.setupSSLContext(0)
+		
+		var thCmd = ..thread.command()
+
+		..table.gc(this, "close")
+	};
+	close = function(){
+		this.clearKeepAliveTimerId();
+		this.clearKeepConnectTimerId()
+		
+		if(listener){
+			component.destroy()
+			listener.destroy()	
+			listener = null;
+		}
+	};
+	on = function(name, func){
+		thCmd[name ++ listener._sessionId] = func;
+	}
+	clearKeepAliveTimerId = function(){
+		if(this.keepAliveTimerId){
+			thCmd._form.clearInterval(this.keepAliveTimerId)
+			this.keepAliveTimerId = null
+		}
+	};
+	clearKeepConnectTimerId = function(){
+		if(this.keepConnectTimerId){
+			thCmd._form.clearInterval(this.keepConnectTimerId)
+			this.keepConnectTimerId = null
+		}
+	};
+	connect = function(ip, port){
+		var ok = __helper__.connect(component, ip, port);
+		if(ok){
+			this.ip = ip;
+			this.port = port;
+		}
+		return ok 
+	};
+	reconnect = function(){
+		return this.connect(this.ip, this.port); 
+	};
+	keepConnect = function(interval=5000){
+		this.clearKeepConnectTimerId()
+		this.keepConnectTimerId = thCmd._form.setInterval( 
+			function(){
+				if(component.state == 3){
+					if(  this.onDisconnect ){
+						this.onDisconnect();
+					}
+					if( listener ? this.reconnect() ){
+					}
+				}
+			},interval 
+		)
+	};	
+	keepAlive = function(interval=10000){
+		this.clearKeepAliveTimerId();
+		this.keepAliveTimerId = thCmd._form.setInterval( 
+			function(){
+				if(listener){
+					if(__helper__.keeplive){
+						__helper__.keeplive(component); 
+					}
+				}
+				
+			},interval 
+		)
+	}
+}

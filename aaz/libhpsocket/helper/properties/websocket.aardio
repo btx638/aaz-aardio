@@ -1,0 +1,103 @@
+﻿import aaz.libhpsocket.helper.userdata.websocket;
+
+namespace aaz.libhpsocket.helper.properties.websocket;
+
+getUserExtra = function(extra){
+	var userdata = ..aaz.libhpsocket.helper.userdata.websocket(owner.userData());
+	userdata.fromExtra(extra)
+	return userdata; 		
+};
+
+getExtraPtr = function(){
+	var userdata  = ..aaz.libhpsocket.helper.userdata.websocket(owner.getUserData());;
+	userdata.buildExtra();
+	userdata.new();	
+	return userdata.extra; 
+}
+
+saveWsUpgradeRequestKey = function(component, wsKey){
+	var userdata = owner.getUserExtra(component.extra);
+	userdata.wsKey = wsKey;
+	userdata.save();
+}
+
+sendWsUpgradeRequest = function(component){
+	return ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(
+				component, 
+				null,
+				null,
+				saveWsUpgradeRequestKey);
+}
+
+getWsUpgradeRequestKey = function(component){
+    var extra = owner.getUserExtra(component.extra);	
+    return extra.wsKey; 
+}
+
+checkWsUpgradeResponse = function(component){
+	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(
+				component, 
+				getWsUpgradeRequestKey);
+}
+
+connect = function(component, ip, port){
+	component.extra = owner.getExtraPtr();
+	return component.start(ip, port, false);
+}
+
+onHandShake = function(component){
+	return sendWsUpgradeRequest(component)
+}
+
+onUpgrade = function(component, upgradeType){
+	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
+		return 2/*_HR_ERROR*/; 
+	}
+	if(!checkWsUpgradeResponse(component)){
+		return 2/*_HR_ERROR*/; 
+	}
+}
+
+onWsMessageBody = function(component, pData,len){
+	var userdata = owner.getUserExtra(component.extra);
+	userdata.concat(pData,len);
+}
+
+onWsMessageComplete = function(component){
+	var extra = owner.getUserExtra(component.extra);
+
+	var unreadLen = extra.len;
+	var headerLen = owner.packetHeader.len;
+	var offset = 0;
+	while(true){	
+		var bodyLen = ..raw.convert(extra.data, owner.packetHeader.struct(), offset).v; 
+		if(owner.isBigEndian){
+			bodyLen = ..raw.swap(bodyLen, owner.packetHeader.type)
+		}
+		var msgLen = headerLen + bodyLen;
+		if(unreadLen < msgLen){
+			extra.toUnread(offset, unreadLen);
+			return ; 
+		}
+	
+		//var msg = ..raw.tostring(extra.data, offset+13, offset+msgLen-1);
+		if(owner.onMsg){
+			owner.onMsg( topointer(extra.data, offset), msgLen )
+		}
+	
+		offset += msgLen;
+		unreadLen -= msgLen;
+		if(unreadLen == 0){
+			extra.realloc();
+			return ; 
+		}
+	}
+}
+
+onClose = function(component){
+	var userdata = owner.getUserExtra(component.extra);
+	userdata.freeData();
+	userdata.freeExtra();
+	
+	component.extra = null;
+}

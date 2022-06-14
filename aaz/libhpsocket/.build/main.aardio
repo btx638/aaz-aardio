@@ -8,6 +8,6 @@ if( !#publishDir ){
 
 fsys.copy( 
 	"~\lib\aaz\libhpsocket\.res\HPSocket4C_U.dll",
-	 publishDir,
+	 fsys.joinpath(publishDir, "\dll\HPSocket4C_U.dll"),
 	 0x10/*_FOF_NOCONFIRMATION 不出现确认对话框*/  | 0x200/*_FOF_NOCONFIRMMKDIR 需要时直接创建一个文件夹,不需用户确定*/ 
 )

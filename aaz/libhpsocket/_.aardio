@@ -2,7 +2,7 @@
 namespace aaz.libhpsocket;
 
 _dll = ..raw.loadDll( 
-	_STUDIO_INVOKED ? "~\lib\aaz\libhpsocket\.res\HPSocket4C_U.dll" : "\HPSocket4C_U.dll"
+	_STUDIO_INVOKED ? "~\lib\aaz\libhpsocket\.res\HPSocket4C_U.dll" : "\dll\HPSocket4C_U.dll"
 );
 
 // https://github.com/ldcsaa/HP-Socket

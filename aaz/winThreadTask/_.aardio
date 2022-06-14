@@ -1,0 +1,25 @@
+﻿import thread.command;
+import win.guid;
+
+namespace aaz;
+class winThreadTask{
+	ctor(){
+		var thCmd = ..thread.command()	
+	};
+	create = function(func, onEnd, ...){
+		var guid = tostring(..win.guid.create());
+		
+		thCmd[guid] = function(...){
+			onEnd(...);
+			thCmd[guid] = null;
+		}
+
+		..thread.invoke( 
+			function(func, guid, ...){
+				import thread.command;
+				
+				thread.command.post(guid, func(...))
+			}, func, guid, ...
+		)
+	}	
+}

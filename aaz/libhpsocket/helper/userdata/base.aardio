@@ -1,0 +1,81 @@
+﻿import util.metaProperty;
+
+namespace aaz.libhpsocket.helper.userdata;
+class base{
+	ctor(userdata){
+		..table.assign(this, userdata)
+	}
+	pointer data;
+}
+namespace base{
+    _metaProperty = ..util.metaProperty(
+		freeData = function(){
+			owner.data = ..raw.realloc(0, owner.data);
+		};
+    	_topointer = function(){
+    		return owner.extra; 
+    	};
+		new = function(){
+			if(owner.data){
+				owner.data = ..raw.realloc(0, owner.data);
+			}
+			owner.data = ..raw.realloc(1)
+			owner.toExtra();
+		};
+		realloc = function(){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			owner.data = ..raw.realloc(1, owner.data, ""); 
+			owner.toExtra();
+		};
+		concat = function(pData, len){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			owner.data = ..raw.concat(owner.data, pData, len);
+			owner.toExtra();
+		};
+		toUnread = function(offset, len){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			var unread = ..raw.realloc(len);
+			unread = ..raw.concat(unread, topointer(owner.data, offset), len);  
+	
+			owner.freeData();
+			
+			owner.data = unread;
+			owner.toExtra();
+		};
+		len = {
+			_get = function(){
+				return ..raw.sizeof(owner.data); 	
+			}
+		};
+		fromExtra = function(extra){
+			..raw.convert(extra, owner);
+			owner.extra = extra; 
+		}
+		
+		buildExtra = function(extra){
+			owner.extra = ..raw.realloc(..raw.sizeof(owner), null, owner); 
+			return owner.extra; 
+		};
+		freeExtra = function(){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			owner.extra = ..raw.realloc(0, owner.extra);
+		};
+		toExtra = function(){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			..raw.convert(owner, owner.extra); 
+		};
+    )	
+}
