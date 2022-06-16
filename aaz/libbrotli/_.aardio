@@ -69,6 +69,39 @@
 		}
 		ptr = ..raw.realloc(0, ptr)
 	};	
+	
+	decompress3 = function(pData, len){
+		var state = _dll.BrotliDecoderCreateInstanceP(0, 0, 0);
+		var ptr = ..raw.realloc(1)
+		
+		var availableIn = {int value=len};
+	 	var nextIn = {ptr v = pData}
+		
+		var result = 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/;	
+		while(result == 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/){
+			// 输出长度
+			var availableOut = {int value=0};
+			result = _dll.BrotliDecoderDecompressStream(
+				state, 
+				availableIn, nextIn,
+				availableOut, 0,
+				0
+			);
+			
+			var buffer = _dll.BrotliDecoderTakeOutputP(state, availableOut)
+			if(availableOut.value){
+				ptr = ..raw.concat(ptr, buffer, availableOut.value)
+			}
+		}
+		
+		_dll.BrotliDecoderDestroyInstance(state);
+		
+
+		if(result == 1/*_BROTLI_DECODER_RESULT_SUCCESS*/ ){ 
+			return ptr; 
+		}
+		ptr = ..raw.realloc(0, ptr)
+	};	
 }
 
 	
