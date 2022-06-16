@@ -1,0 +1,25 @@
+﻿import fsys.stream;
+import aaz.libbrotli;
+
+var _dll = aaz.libbrotli._dll
+
+namespace aaz.libbrotli;
+class decoder{
+	ctor(){
+		this.state = _dll.BrotliDecoderCreateInstanceP(0, 0, 0);
+		..table.gc(this, "destroy");
+	};
+	destroy = function(){
+		if(this.state){
+			_dll.BrotliDecoderDestroyInstance(this.state);
+			this.state = null
+		}
+	};
+	errorCode = function(){
+		return _dll.BrotliDecoderGetErrorCode(this.state)
+	};
+	errorString = function(){
+		var code = this.errorCode();
+		return ..raw.str(_dll.BrotliDecoderErrorStringP(code)); 
+	};
+}

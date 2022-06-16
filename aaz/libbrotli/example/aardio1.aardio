@@ -1,0 +1,26 @@
+
+io.open()
+import time.performance
+import inet.whttp
+import aaz.libbrotli;
+
+
+var whttp = inet.whttp(,"HTTP://127.0.0.1:10083")
+whttp.addHeaders = /**
+accept-encoding: br
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36
+**/
+
+var html = whttp.get( "https://www.google.com/" )
+
+
+io.print(#html)
+if(html){
+	var tick = time.performance.tick()
+	var ret = aaz.libbrotli.decompress(html)
+	io.print(time.performance.tick() - tick )
+	//string.save("D:\dev\aardio\lib\aaz\libbrotli\.res\include\brotli\test.html", ret)
+}
+
+
+execute("pause")

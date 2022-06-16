@@ -1,0 +1,76 @@
+﻿namespace aaz.libbrotli{
+	_dll := ..raw.loadDll($"~\lib\aaz\libbrotli\.res\libbrotli.dll",,"cdecl")
+
+	decompress = function(str){
+		var state = _dll.BrotliDecoderCreateInstanceP(0, 0, 0);
+		var ptr = ..raw.realloc(1)
+		
+		var availableIn = {int value=#str};
+	 	var nextIn = {ptr v = ..raw.buffer(str)} // 速度快
+	 //	var nextIn = {string v = str}
+		
+		var result = 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/;	
+		while(result == 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/){
+			var availableOut = {int value=0};
+			result = _dll.BrotliDecoderDecompressStream(
+				state, 
+				availableIn, nextIn,
+				availableOut, 0,
+				0
+			);
+			var buffer = _dll.BrotliDecoderTakeOutputP(state, availableOut)
+
+			if(availableOut.value){
+				ptr = ..raw.concat(ptr, buffer, availableOut.value)
+			}
+		}
+
+		var ret;
+		if(result == 1/*_BROTLI_DECODER_RESULT_SUCCESS*/ ){ 
+			ret = ..raw.str(ptr) 
+		}
+
+		_dll.BrotliDecoderDestroyInstance(state);
+		ptr = ..raw.realloc(0, ptr)
+		
+		return ret; 
+	};
+	
+	decompress2 = function(str){
+		var state = _dll.BrotliDecoderCreateInstanceP(0, 0, 0);
+		var ptr = ..raw.realloc(1)
+		
+		var availableIn = {int value=#str};
+	 	var nextIn = {ptr v = ..raw.buffer(str)} // 速度快
+	 //	var nextIn = {string v = str}
+		
+		var result = 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/;	
+		while(result == 3/*_BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT*/){
+			// 输出长度
+			var availableOut = {int value=0};
+			result = _dll.BrotliDecoderDecompressStream(
+				state, 
+				availableIn, nextIn,
+				availableOut, 0,
+				0
+			);
+			
+			var buffer = _dll.BrotliDecoderTakeOutputP(state, availableOut)
+			if(availableOut.value){
+				ptr = ..raw.concat(ptr, buffer, availableOut.value)
+			}
+		}
+		
+		_dll.BrotliDecoderDestroyInstance(state);
+		
+
+		if(result == 1/*_BROTLI_DECODER_RESULT_SUCCESS*/ ){ 
+			return ptr; 
+		}
+		ptr = ..raw.realloc(0, ptr)
+	};	
+}
+
+	
+
+
