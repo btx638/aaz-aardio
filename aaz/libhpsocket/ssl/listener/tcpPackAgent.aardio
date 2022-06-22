@@ -3,7 +3,6 @@
 namespace aaz.libhpsocket.ssl.listener;
 class tcpPackAgent{
 	ctor(){
-		this = ..aaz.libhpsocket.listener.tcpPackAgent();
-		this.componentClassPath = "ssl.component.tcpPackAgent";
+		this = ..aaz.libhpsocket.listener.tcpPackAgent("ssl.component.tcpPackAgent");
 	};
 }

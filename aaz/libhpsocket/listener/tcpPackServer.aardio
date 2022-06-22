@@ -4,8 +4,8 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.listener;
 class tcpPackServer{
-	ctor(){
-		this = ..aaz.libhpsocket.listener.server("component.tcpPackServer");
+	ctor(path="component.tcpPackServer"){
+		this = ..aaz.libhpsocket.listener.server(path);
 		this.pListener = _dll.Create_HP_TcpPackServerListenerP();
 	};
 	destroy = function(){

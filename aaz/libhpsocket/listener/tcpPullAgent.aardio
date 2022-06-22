@@ -4,8 +4,8 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.listener;
 class tcpPullAgent{
-	ctor(){
-		this = ..aaz.libhpsocket.listener.agent("component.tcpPullAgent");
+	ctor(path="component.tcpPullAgent"){
+		this = ..aaz.libhpsocket.listener.agent(path);
 		this.pListener = _dll.Create_HP_TcpPullAgentListenerP();
 	};
 	destroy = function(){

@@ -37,7 +37,7 @@ sendWsUpgradeRequest = function(component){
 	var userdata = readUserdata(component);
 	var wsPath = userdata.wsPath; 
 	var baseHeaders;
-	var origin = userdata.origin;
+	var origin = userdata.origin; 
 	if(origin){
 		baseHeaders = {
 			["Origin"] = origin;

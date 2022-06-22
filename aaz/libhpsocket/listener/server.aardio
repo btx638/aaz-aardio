@@ -4,8 +4,8 @@ import aaz.libhpsocket.listener.properties.server;
 
 namespace aaz.libhpsocket.listener;
 class server{
-	ctor(componentClassPath){
-		this = ..aaz.libhpsocket.listener(componentClassPath);
+	ctor(path){
+		this = ..aaz.libhpsocket.listener(path);
 	};	
 	@_metaProperty;
 }

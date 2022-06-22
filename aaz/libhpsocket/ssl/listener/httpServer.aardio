@@ -3,8 +3,7 @@
 namespace aaz.libhpsocket.ssl.listener;
 class httpServer{
 	ctor(){
-		this = ..aaz.libhpsocket.listener.httpServer();
-		this.componentClassPath = "ssl.component.httpServer";
+		this = ..aaz.libhpsocket.listener.httpServer("ssl.component.httpServer");
 	};
 }
 

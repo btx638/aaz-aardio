@@ -7,7 +7,6 @@ namespace aaz.libhpsocket.component;
 class threadPool{
 	ctor(pListener){
 		this.pThreadPool = _dll.Create_HP_ThreadPoolP(pListener);
-		..table.gc(this, "destroy");
 	};
 	destroy = function(){
 		if(this.pThreadPool){

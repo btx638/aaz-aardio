@@ -2,7 +2,7 @@
 
 namespace aaz.libhpsocket.listener;
 class httpSyncClient{
-	ctor(){
-		this = ..aaz.libhpsocket.listener.httpClient("component.httpSyncClient");
+	ctor(path="component.httpSyncClient"){
+		this = ..aaz.libhpsocket.listener.httpClient(path);
 	};
 }

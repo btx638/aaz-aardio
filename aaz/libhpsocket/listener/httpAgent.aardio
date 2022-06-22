@@ -6,8 +6,8 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.listener;
 class httpAgent{
-	ctor(){
-		this = ..aaz.libhpsocket.listener("component.httpAgent");
+	ctor(path="component.httpAgent"){
+		this = ..aaz.libhpsocket.listener(path);
 		this.pListener = _dll.Create_HP_HttpAgentListenerP();
 	};	
 	destroy = function(){

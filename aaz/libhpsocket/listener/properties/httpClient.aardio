@@ -30,7 +30,7 @@ onHandShake = {
 
 onSend = {
 	_set = function(callback){
-		owner.OnSendCallback = owner.createThreadCallback(callback,"int(ptr pSender,ADDR connId,pointer pData, int length)");
+		owner.OnSendCallback = owner.createThreadCallback(callback,"int(ptr pSender, ADDR connId, pointer pData, int length)");
 		_dll.HP_Set_FN_HttpClient_OnSend(owner.pListener, owner.OnSendCallback );
 	} 	
 }

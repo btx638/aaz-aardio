@@ -6,9 +6,11 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.listener;
 class httpServer{
-	ctor(){
-		this = ..aaz.libhpsocket.listener("component.httpServer");
+	ctor(path="component.httpServer"){
+		this = ..aaz.libhpsocket.listener(path);
 		this.pListener = _dll.Create_HP_HttpServerListenerP()
+		
+		..table.gc(this,"destroy")
 	};
 	destroy = function(){
 		if(this.pListener){

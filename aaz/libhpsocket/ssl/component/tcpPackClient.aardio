@@ -11,7 +11,6 @@ class tcpPackClient{
 		}
 		elseif(listener){
 			this.pClient = _dll.Create_HP_SSLPackClientP(listener);
-			..table.gc(this, "destroy");
 		}
 		else {
 			error("请指定参数1 pClient 或参数2 pListener", 2);

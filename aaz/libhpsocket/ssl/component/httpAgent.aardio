@@ -11,7 +11,6 @@ class httpAgent{
 		}
 		elseif(listener){
 			this.pAgent = _dll.Create_HP_HttpsAgentP(listener);
-			..table.gc(this, "destroy");
 		}
 		else {
 			error("请指定参数@1 listener 或参数@2 pSocket", 2);

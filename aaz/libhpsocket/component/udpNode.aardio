@@ -11,7 +11,6 @@ class udpNode{
 		}
 		elseif(listener){
 			this.pNode = _dll.Create_HP_UdpNodeP(listener);
-			..table.gc(this, "destroy");
 		}
 		else {
 			error("请指定参数@1 pNode 或参数@2 pListener", 2);

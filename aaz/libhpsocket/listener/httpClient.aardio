@@ -6,8 +6,8 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.listener;
 class httpClient{
-	ctor(){
-		this = ..aaz.libhpsocket.listener("component.httpClient");
+	ctor(path="component.httpClient"){
+		this = ..aaz.libhpsocket.listener(path);
 		this.pListener = _dll.Create_HP_HttpClientListenerP()
 	};	
 	destroy = function(){

@@ -3,8 +3,7 @@
 namespace aaz.libhpsocket.ssl.listener;
 class httpAgent{
 	ctor(){
-		this = ..aaz.libhpsocket.listener.httpAgent();
-		this.componentClassPath = "ssl.component.httpAgent";
+		this = ..aaz.libhpsocket.listener.httpAgent("ssl.component.httpAgent");
 	};
 }
 

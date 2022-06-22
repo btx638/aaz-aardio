@@ -69,9 +69,21 @@ checkWsUpgradeResponse = function(component, getWsUpgradeRequestKey){
 	if(wsHelper.verifyKey(clientKey, serverKey)){
 		 return true;
 	}
-	else {
-		return false, "clientKey 与 serverKey 不匹配";
-	}	
+	return false, "clientKey 与 serverKey 不匹配";
+		
+}
+
+checkWsUpgradeResponse2 = function(component, clientKey){	
+	var serverKey = component.getHeader("Sec-WebSocket-Accept");
+	if(!serverKey){
+		return false, "响应头缺少 Sec-WebSocket-Accept"; 
+	} 
+
+	if(wsHelper.verifyKey(clientKey, serverKey)){
+		 return true;
+	}
+	return false, "clientKey 与 serverKey 不匹配";
+		
 }
 
 sendWsPong = function(component, mask){

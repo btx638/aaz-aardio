@@ -1,5 +1,5 @@
 ﻿import aaz.libhpsocket.helper.userdata.websocket;
-
+import aaz.libhpsocket.helper.httpClient;
 namespace aaz.libhpsocket.helper.properties.websocket;
 
 getUserExtra = function(extra){
@@ -18,15 +18,21 @@ getExtraPtr = function(){
 saveWsUpgradeRequestKey = function(component, wsKey){
 	var userdata = owner.getUserExtra(component.extra);
 	userdata.wsKey = wsKey;
-	userdata.save();
+	userdata.updateExtra();
 }
 
 sendWsUpgradeRequest = function(component){
+	var userdata = owner.getUserExtra(component.extra);
+	var wsPath = userdata.wsPath; 
+	var wsOrigin = userdata.wsOrigin;
+	
+	var baseHeaders = wsOrigin ? {["Origin"] = wsOrigin} : null
+
 	return ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest(
 				component, 
-				null,
-				null,
-				saveWsUpgradeRequestKey);
+				wsPath,
+				baseHeaders,
+				owner.saveWsUpgradeRequestKey);
 }
 
 getWsUpgradeRequestKey = function(component){
@@ -37,7 +43,7 @@ getWsUpgradeRequestKey = function(component){
 checkWsUpgradeResponse = function(component){
 	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse(
 				component, 
-				getWsUpgradeRequestKey);
+				owner.getWsUpgradeRequestKey);
 }
 
 connect = function(component, ip, port){
@@ -46,15 +52,18 @@ connect = function(component, ip, port){
 }
 
 onHandShake = function(component){
-	return sendWsUpgradeRequest(component)
+	return owner.sendWsUpgradeRequest(component)
 }
 
 onUpgrade = function(component, upgradeType){
 	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
 		return 2/*_HR_ERROR*/; 
 	}
-	if(!checkWsUpgradeResponse(component)){
+	if(!owner.checkWsUpgradeResponse(component)){
 		return 2/*_HR_ERROR*/; 
+	}
+	if(owner.login){
+		owner.login(owner.getUserExtra(component.extra))
 	}
 }
 
@@ -65,16 +74,15 @@ onWsMessageBody = function(component, pData,len){
 
 onWsMessageComplete = function(component){
 	var extra = owner.getUserExtra(component.extra);
-
 	var unreadLen = extra.len;
-	var headerLen = owner.packetHeader.len;
 	var offset = 0;
+	
 	while(true){	
-		var bodyLen = ..raw.convert(extra.data, owner.packetHeader.struct(), offset).v; 
+		var bodyLen = ..raw.convert(extra.data, owner.header.struct(), offset).v; 
 		if(owner.isBigEndian){
-			bodyLen = ..raw.swap(bodyLen, owner.packetHeader.type)
+			bodyLen = ..raw.swap(bodyLen, owner.header.type)
 		}
-		var msgLen = headerLen + bodyLen;
+		var msgLen = owner.header.len + bodyLen;
 		if(unreadLen < msgLen){
 			extra.toUnread(offset, unreadLen);
 			return ; 

@@ -4,6 +4,5 @@ namespace aaz.libhpsocket.ssl.listener;
 class tcpAgent{
 	ctor(){
 		this = ..aaz.libhpsocket.listener.tcpAgent("ssl.component.tcpAgent");
-//		this.componentClassPath = "ssl.component.tcpAgent";
 	};
 }

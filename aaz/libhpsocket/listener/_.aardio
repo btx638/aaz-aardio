@@ -5,9 +5,7 @@ namespace aaz.libhpsocket;
 class listener{
     ctor(componentClassPath){
 		if(!componentClassPath) error("@参数1 componentClassPath不能为空", 2);
-
-        this.componentClassPath = componentClassPath;
-        
+     
         this._sessionId = tostring(..win.guid.create());
         ..table.push(__gcProtectTable__, this);
     };   
@@ -21,12 +19,12 @@ class listener{
 					global.import(owner.componentClassPath);
 					__componentClass__ = eval(owner.componentClassPath);
 
-					if( owner.threadGlobal ){
+					if(owner.threadGlobal){
 						..table.mix(global, owner.threadGlobal);
 						owner.threadGlobal = null;
 					}
 					
-					if( owner.onThreadCreated ){
+					if(owner.onThreadCreated){
 						owner.onThreadCreated(owner.sessionId);
 						owner.onThreadCreated = null;
 						owner.sessionId = null;
@@ -37,7 +35,7 @@ class listener{
 			proto,
 			{
 				callback = callback;
-				componentClassPath = "aaz.libhpsocket." ++ this.componentClassPath;
+				componentClassPath = "aaz.libhpsocket." ++ componentClassPath;
 				onThreadCreated = this.onThreadCreated;
 				threadGlobal = this.threadGlobal;
 				sessionId = this._sessionId;

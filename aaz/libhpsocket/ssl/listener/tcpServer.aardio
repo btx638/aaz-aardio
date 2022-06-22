@@ -3,7 +3,6 @@
 namespace aaz.libhpsocket.ssl.listener;
 class tcpServer{
 	ctor(){
-		this = ..aaz.libhpsocket.listener.tcpServer();
-		this.componentClassPath = "ssl.component.tcpServer";
+		this = ..aaz.libhpsocket.listener.tcpServer("ssl.component.tcpServer");
 	};
 }
