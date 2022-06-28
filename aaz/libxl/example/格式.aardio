@@ -4,9 +4,7 @@ var book = aaz.libxl.createBook();
 book.setKey();
 
 var font = book.addFont();
-font.
-	setName("Impact").
-	setSize(36);
+font.setName("Impact").setSize(36);
 
 var format = book.addFormat()
 format.config = {
