@@ -1,4 +1,5 @@
 ﻿import util.metaProperty;
+import win.guid;
 import aaz.libhpsocket.listener.properties.threadPool;
 
 var _dll = aaz.libhpsocket._dll;
@@ -7,6 +8,9 @@ namespace aaz.libhpsocket.listener;
 class threadPool{
 	ctor(){
 		this.pListener = _dll.Create_HP_ThreadPoolListenerP();
+        this._sessionId = tostring(..win.guid.create());
+        // 避免监听器被自动回收
+        ..table.push(__gcProtectTable__, this);
 	};
 	destroy = function(){
 		if(this.pListener){
@@ -14,6 +18,37 @@ class threadPool{
 			this.pListener = null;
 		}
 	};
+	createThreadCallback = function(callback, proto){
+		return ..thread.tostdcall( 
+			function(pThreadPool, ...){	
+				if(!__componentClass__){
+					import aaz.libhpsocket.component.threadPool;
+					__componentClass__ = aaz.libhpsocket.component.threadPool;
+
+					if(owner.threadGlobal){
+						..table.mix(global, owner.threadGlobal);
+						owner.threadGlobal = null;
+					}
+					
+					if(owner.onThreadCreated){
+						owner.onThreadCreated(owner.sessionId);
+						owner.onThreadCreated = null;
+						owner.sessionId = null;
+					}
+				}
+				return owner.callback(__componentClass__(null, pThreadPool), ...);
+			},
+			proto,
+			{
+				callback = callback;
+				onThreadCreated = this.onThreadCreated;
+				threadGlobal = this.threadGlobal;
+				sessionId = this._sessionId;
+			});	
+	}
 	@_metaProperty;	
 }
-threadPool._metaProperty = ..util.metaProperty(..aaz.libhpsocket.listener.properties.threadPool); 
+namespace threadPool{
+	_metaProperty = ..util.metaProperty(..aaz.libhpsocket.listener.properties.threadPool); 
+    __gcProtectTable__ = {}	
+}

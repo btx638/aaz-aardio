@@ -1,0 +1,40 @@
+﻿
+
+namespace aaz.libhpsocket.app;
+class base{
+	ctor(listener, handlerPath, userDataPath){
+		listener.threadGlobal = {
+			handlerPath__ = handlerPath;
+			userDataClassPath__ = userDataPath;
+		}
+		
+		listener.onThreadCreated = function(sessionId){
+			// 处理器表
+			global.import(handlerPath__);
+			__handler__ = eval(handlerPath__);
+			handlerPath__ = null;
+			
+			// 用户数据类
+			global.import(userDataClassPath__);
+			__userDataClass__ = eval(userDataClassPath__);
+			userDataClassPath__ = null;
+			
+			
+			// 转发到 UI 主线程
+			import thread.command;
+			
+			var cacheName = {}
+			__postUi__ = function(name, ...){
+				if(!cacheName[name]){
+					cacheName[name] = name ++ sessionId;
+				}
+				thread.command.post(cacheName[name], ...);
+			}
+		}
+		
+		var thCmd = ..thread.command()
+	};
+	on = function(name, func){
+		thCmd[name ++ listener._sessionId] = func;
+	};
+}

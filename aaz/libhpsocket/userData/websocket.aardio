@@ -1,0 +1,15 @@
+﻿import util.metaProperty;
+import aaz.libhpsocket.userData.base;
+
+namespace aaz.libhpsocket.userData;
+class websocket{
+	ctor(wsPath, wsOrigin){
+		this = ..aaz.libhpsocket.userData.base();
+		this.wsPath = wsPath;
+		this.wsOrigin = wsOrigin;
+	}
+	// 验证的 key
+	BYTE wsKey[24];
+	BYTE wsPath[30];
+	BYTE wsOrigin[50];
+}

@@ -2,36 +2,15 @@
 import util.metaProperty;
 import aaz.libhpsocket.ssl.component.httpClient;
 import aaz.libhpsocket.ssl.listener.httpClient;
+import aaz.libhpsocket.app.client;
 
 namespace aaz.libhpsocket.app.websocket.ssl;
 class client{
-	ctor(handlerPath, userDataPath){
+	ctor(handlerPath, userDataPath){	
 		var listener = ..aaz.libhpsocket.ssl.listener.httpClient(); 
 		
-		listener.threadGlobal = {
-			__handlerPath__ = handlerPath;
-			__userDataPath__ = userDataPath;
-		}
+		this = ..aaz.libhpsocket.app.client(listener, handlerPath, userDataPath)
 		
-		listener.onThreadCreated = function(sessionId){
-			import thread.command;
-			
-			global.import(__handlerPath__);
-			__handler__ = eval(__handlerPath__)
-			
-			global.import(__userDataPath__);
-			__userData__ = eval(__userDataPath__)
-			
-	
-			var cacheName = {}
-			__postUi__ = function(name, ...){
-				if(!cacheName[name]){
-					cacheName[name] = name ++ sessionId;
-				}
-				thread.command.post( cacheName[name], ... );
-			}
-		}
-
 		listener.onHandShake = function(component, connId){
 			return __handler__.onHandShake(component);
 		}
@@ -42,11 +21,6 @@ class client{
 		
 		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
 			return __handler__.onWsMessageHeader(component, final, reserved, opCode, mask, bodyLen);
-		}
-		
-		
-		listener.onWsMessageBody = function(component, connId, pData, len){
-			return __handler__.onWsMessageBody(component, pData, len);	
 		}
 		
 		listener.onWsMessageBody = function(component, connId, pData, len){
@@ -63,30 +37,16 @@ class client{
 		
 		var component = ..aaz.libhpsocket.ssl.component.httpClient(listener);
 		component.setupSSLContext(0)
-		
-		var thCmd = ..thread.command()
-
-		..table.gc(this, "close")
 	};
+	// 必须手动关闭，不要放在自动析构里面
 	close = function(){
-		this._clearIntervalSendTimerId();
-		this._clearKeepConnectTimerId()
-		
 		if(listener){
 			component.destroy()
-			listener.destroy()	
+			listener.destroy()
+				
+			component = null;
 			listener = null;
 		}
-	};
-	on = function(name, func){
-		thCmd[name ++ listener._sessionId] = func;
-	}
-	_clearUserData = function(){
-		if(this.userData){
-			this.userData.freeExtra()
-			component.extra = null
-			this.userData = null
-		}	
 	};
 	start = function(ip, port){
 		if(this.userData){
@@ -102,48 +62,35 @@ class client{
 		
 		return true; 
 	};
-	reconnect = function(){
+
+	isDisconnect = function(){
+		return component.state == 3; 
+	};
+	_reconnect = function(){
 		return this.connect(this.ip, this.port); 
 	};
-	_clearKeepConnectTimerId = function(){
-		if(this.keepConnectTimerId){
-			thCmd._form.clearInterval(this.keepConnectTimerId)
-			this.keepConnectTimerId = null
-		}
+	_clearUserData = function(){
+		if(this.userData){
+			this.userData.freeExtra()
+			component.extra = null
+			this.userData = null
+		}	
 	};
-	keepConnect = function(interval=5000){
-		this._clearKeepConnectTimerId()
-		this.keepConnectTimerId = thCmd._form.setInterval( 
-			function(){
-				if(component.state == 3){
-					if(this.onDisconnect){
-						this.onDisconnect();
-					}
-					if( listener ? this.reconnect() ){
-					}
-				}
-			},interval 
-		)
-	};	
-	_clearIntervalSendTimerId = function(){
-		if(this.intervalSendTimerId){
-			thCmd._form.clearInterval(this.intervalSendTimerId)
-			this.intervalSendTimerId = null
-		}
-	};
-	startIntervalSend = function(interval=10000){
-		this._clearIntervalSendTimerId();
-		this.intervalSendTimerId = thCmd._form.setInterval( 
-			function(){
-				if(listener){
-					if(this.intervalSend){
-						var res = this.intervalSend();
-						if(res){
-							component.sendWsMessage(res);
-						}
-					}
-				}
-			},interval 
-		)
-	}
+	@_metaProperty;
+}
+namespace client{
+    _metaProperty = ..util.metaProperty(
+    	userData = {
+    		_get = function(){ 
+    		}
+    		_set = function( value ){
+    		    if(value === null){
+    		    	
+    		    }
+    		    else {
+    		    	
+    		    }
+    		} 	
+    	};
+    )	
 }

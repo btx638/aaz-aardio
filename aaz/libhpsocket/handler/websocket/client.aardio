@@ -3,7 +3,7 @@
 namespace aaz.libhpsocket.handler.websocket.client;
 
 var getUserExtra = function(extra){
-	var userdata = ..__userData__();
+	var userdata = ..__userDataClass__();
 	userdata.fromExtra(extra)
 	return userdata; 		
 }
@@ -47,10 +47,10 @@ onHandShake = function(component){
 }
 
 onUpgrade = function(component, upgradeType){
-
 	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
 		return 2/*_HR_ERROR*/; 
 	}
+	
 	if(!checkWsUpgradeResponse(component)){
 		return 2/*_HR_ERROR*/; 
 	}
@@ -69,7 +69,7 @@ onWsMessageHeader = function(component, final, reserved, opCode, mask, bodyLen){
 
 onWsMessageBody = function(component, pData, len){ 
 	var userdata = getUserExtra(component.extra);
-	userdata.concat(pData,len);
+	userdata.concat(pData, len);
 }
 
 onWsMessageComplete = function(component){
@@ -134,6 +134,5 @@ onWsMessageComplete = function(component){
 onClose = function(component){
 	var userdata = getUserExtra(component.extra);
 	userdata.freeExtra();
-	..io.print("close")
 	component.extra = null;
 }

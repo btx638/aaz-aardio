@@ -5,8 +5,9 @@ namespace aaz.libhpsocket;
 class listener{
     ctor(componentClassPath){
 		if(!componentClassPath) error("@参数1 componentClassPath不能为空", 2);
-     
+     	
         this._sessionId = tostring(..win.guid.create());
+        // 避免监听器被自动回收
         ..table.push(__gcProtectTable__, this);
     };   
 	createThreadCallback = function(callback, proto){
@@ -18,6 +19,7 @@ class listener{
 				if(!__componentClass__){
 					global.import(owner.componentClassPath);
 					__componentClass__ = eval(owner.componentClassPath);
+					owner.componentClassPath = null;
 
 					if(owner.threadGlobal){
 						..table.mix(global, owner.threadGlobal);

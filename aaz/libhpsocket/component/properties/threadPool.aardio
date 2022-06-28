@@ -2,6 +2,7 @@
 var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.component.properties.threadPool;
+
 createTaskObj = function(taskProc, pSender, connId, buffer, bufferLen, buffType, wParam, lParam){
 	return _dll.Create_HP_SocketTaskObjP(taskProc, pSender, connId, buffer, bufferLen, buffType, wParam, lParam);
 }

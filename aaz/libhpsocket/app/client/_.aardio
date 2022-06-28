@@ -1,0 +1,57 @@
+﻿import aaz.libhpsocket.app.base;
+
+namespace aaz.libhpsocket.app;
+class client{
+	ctor(listener, handlerPath, userDataPath){
+		this = ..aaz.libhpsocket.app.base(listener, handlerPath, userDataPath)
+		this["(userData)"] = null
+		
+		..table.gc(this, function(){
+			this._clearIntervalSendTimerId();
+			this._clearKeepConnectTimerId();
+		})
+	};
+	keepConnect = function(interval=5000){
+		this._clearKeepConnectTimerId()
+		
+		this.keepConnectTimerId = thCmd._form.setInterval( 
+			function(){
+				if( this.isDisconnect() ){
+					if(this.onDisconnect){
+						this.onDisconnect();
+					}
+					this._reconnect()
+				}
+			},interval 
+		)
+	};
+	startIntervalSend = function(interval=10000){
+		this._clearIntervalSendTimerId();
+		
+		this.intervalSendTimerId = thCmd._form.setInterval( 
+			function(){
+				if(listener){
+					if(this.intervalSend){
+						var res = this.intervalSend();
+						if(res){
+							component.sendWsMessage(res);
+						}
+					}
+				}
+			},interval 
+		)
+	};
+	_clearIntervalSendTimerId = function(){
+		if(this.intervalSendTimerId){
+			thCmd._form.clearInterval(this.intervalSendTimerId)
+			this.intervalSendTimerId = null
+		}
+	};
+	_clearKeepConnectTimerId = function(){
+		if(this.keepConnectTimerId){
+			thCmd._form.clearInterval(this.keepConnectTimerId)
+			this.keepConnectTimerId = null
+		}
+	};
+	
+}

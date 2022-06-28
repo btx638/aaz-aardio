@@ -5,8 +5,16 @@ var _dll = aaz.libhpsocket._dll;
 
 namespace aaz.libhpsocket.component;
 class threadPool{
-	ctor(pListener){
-		this.pThreadPool = _dll.Create_HP_ThreadPoolP(pListener);
+	ctor(pListener, pThreadPool){
+		if(pThreadPool){
+			this.pThreadPool = pThreadPool;
+		}
+		elseif(pListener){
+			this.pThreadPool = _dll.Create_HP_ThreadPoolP(pListener);
+		}
+		else {
+			error("请指定参数@1 pListener 或参数@2 pThreadPool", 2);
+		}
 	};
 	destroy = function(){
 		if(this.pThreadPool){
