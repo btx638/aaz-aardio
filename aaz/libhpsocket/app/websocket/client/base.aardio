@@ -1,0 +1,35 @@
+﻿import aaz.libhpsocket.app.client;
+
+namespace aaz.libhpsocket.app.websocket.client;
+class base{
+	ctor(listener, component, handlerPath, userDataPath){
+		this = ..aaz.libhpsocket.app.client(listener, component, handlerPath, userDataPath)
+		
+		listener.onHandShake = function(component, connId){
+			return __handler__.onHandShake(component);
+		}
+		
+		listener.onUpgrade = function(component, connId, upgradeType){
+			return __handler__.onUpgrade(component, upgradeType);	
+		}
+		
+		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+			return __handler__.onWsMessageHeader(component, final, reserved, opCode, mask, bodyLen);
+		}
+		
+		listener.onWsMessageBody = function(component, connId, pData, len){
+			return __handler__.onWsMessageBody(component, pData, len);	
+		}
+		
+		listener.onWsMessageComplete = function(component, connId){
+			return __handler__.onWsMessageComplete(component);
+		}
+		
+		listener.onClose = function(component, connId, enOperation, errCode){
+			return __handler__.onClose(component, connId, enOperation, errCode);
+		}
+	};
+	send = function(data){
+		component.sendWsMessage(data);	
+	};	
+}

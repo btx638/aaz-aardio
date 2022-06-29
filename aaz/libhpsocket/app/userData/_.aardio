@@ -1,0 +1,86 @@
+﻿import util.metaProperty;
+
+namespace aaz.libhpsocket.app;
+class userData{
+	ctor(){
+	}
+	// 存放原始的传输数据
+	pointer pData;
+	@_metaProperty;
+}
+namespace userData{
+    _metaProperty = ..util.metaProperty(
+		freeData = function(){
+			if(owner.pData){
+				owner.pData = ..raw.realloc(0, owner.pData);
+			}
+		};
+    	_topointer = function(){
+    		return owner.extra; 
+    	};
+		new = function(){
+			owner.freeData();
+			
+			owner.pData = ..raw.realloc(1)
+			owner.updateExtra();
+		};
+		reset = function(){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			owner.pData = ..raw.realloc(1, owner.pData, ""); 
+			owner.updateExtra();
+		};
+		concat = function(pData, len){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			owner.pData = ..raw.concat(owner.pData, pData, len);
+			owner.updateExtra();
+		};
+		getString = function(){
+			var str = ..raw.tostring(owner.pData,1,..raw.sizeof(owner.pData))
+			owner.reset()
+			return str; 	
+		};
+		toUnread = function(offset, len){
+			if(!owner.extra){
+				error("未 bindExtra ",2)
+			}
+			
+			// 构建未读取数据的动态指针
+			var unread = ..raw.realloc(len);
+			unread = ..raw.concat(unread, topointer(owner.pData, offset), len);  
+			
+			// 释放数据	
+			owner.freeData();
+			
+			// 执行未读取数据的指针
+			owner.pData = unread;
+			// 更新 extra 
+			owner.updateExtra();
+		};
+		fromExtra = function(extra){
+			..raw.convert(extra, owner);
+			owner.extra = extra; 
+		}
+		buildExtra = function(){
+			owner.extra = ..raw.realloc(..raw.sizeof(owner), null, owner); 
+			owner.new()
+			return owner.extra; 
+		};
+		updateExtra = function(){
+			if(owner.extra){
+				..raw.convert(owner, owner.extra); 
+			}
+		};
+		freeExtra = function(){
+			owner.freeData();
+			if(owner.extra){
+				owner.extra = ..raw.realloc(0, owner.extra);
+			}
+		};
+    )	
+}

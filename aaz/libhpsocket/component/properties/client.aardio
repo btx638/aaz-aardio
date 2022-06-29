@@ -86,17 +86,13 @@ getRemoteHost = function(){
 getPendingDataLength = function(){ 
 	var pending = {int value}; 
 	
-	return 
-		_dll.HP_Client_GetPendingDataLengthB(owner.pClient, pending), 
-		pending.value;
+	return _dll.HP_Client_GetPendingDataLengthB(owner.pClient, pending), pending.value;
 }
 
 isPauseReceive = function(){
 	var result = {bool value};
 	
-	return 
-		_dll.HP_Client_IsPauseReceiveB(owner.pClient, result),
-		result.value; 
+	return _dll.HP_Client_IsPauseReceiveB(owner.pClient, result), result.value; 
 }
 	
 isSecure = {

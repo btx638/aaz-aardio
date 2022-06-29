@@ -57,6 +57,16 @@ sendWsUpgradeRequest = function(component, path="/", baseHeaders, saveWsUpgradeR
 	}
 }
 
+sendWsUpgradeRequest2 = function(component, path="/", baseHeaders){
+	var host = self.getUrlHost(component);
+	var origin = self.getUrl(component, path);
+	var headers, clientKey = wsHelper.genClientHeaders(host, origin, baseHeaders);
+	
+	if(component.sendGet(path, headers)){
+		return clientKey; 
+	}
+}
+
 checkWsUpgradeResponse = function(component, getWsUpgradeRequestKey){
 	getWsUpgradeRequestKey := defaultGetWsUpgradeRequestKey;
 	

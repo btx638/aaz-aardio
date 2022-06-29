@@ -1,0 +1,139 @@
+﻿import aaz.libhpsocket.helper.httpClient;
+
+namespace aaz.libhpsocket.app.websocket.client.handler;
+
+var getUserExtra = function(extra){
+	var userData = ..__userDataClass__();
+	userData.fromExtra(extra)
+	return userData; 		
+}
+	
+var sendWsUpgradeRequest = function(component){
+	var userData = getUserExtra(component.extra);
+	var wsPath = userData.wsPath; 
+	var wsOrigin = userData.wsOrigin;
+
+	wsPath = ..string.str(wsPath) 
+	wsOrigin = ..string.str(wsOrigin)
+	
+	wsPath = #wsPath ? wsPath : null
+	var baseHeaders = #wsOrigin ? {["Origin"] = wsOrigin} : null
+	
+
+	var wsKey = ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest2(
+				component, 
+				wsPath,
+				baseHeaders);
+				
+	if(wsKey){
+		userData.wsKey = wsKey;
+		userData.updateExtra();
+		return true; 
+	}
+	
+}
+
+var checkWsUpgradeResponse = function(component){
+    var extra = getUserExtra(component.extra);	
+    var wsKey = extra.wsKey; 
+    
+	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse2(component, wsKey);
+}
+
+onHandShake = function(component){
+	return sendWsUpgradeRequest(component)
+}
+
+onUpgrade = function(component, upgradeType){
+	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
+		return 2/*_HR_ERROR*/; 
+	}
+	
+	if(!checkWsUpgradeResponse(component)){
+		return 2/*_HR_ERROR*/; 
+	}
+
+	if(owner.afterUpgrade){
+		var res = owner.afterUpgrade(getUserExtra(component.extra))
+		if(res){ 
+			component.sendWsMessage(res);
+		}
+	}
+}
+
+onWsMessageHeader = function(component, final, reserved, opCode, mask, bodyLen){
+
+}
+
+
+onWsMessageBody = function(component, pData, len){ 
+	var userData = getUserExtra(component.extra);
+	userData.concat(pData, len);
+}
+
+parseFixedHeaderMsg = function(extra){	
+	//  剩余数据的长度
+	var unreadLen = ..raw.sizeof(extra.pData);
+	//  读取指针，始终指向数据的头部
+	var offset = 0;
+
+	while(true){	
+		// 标准消息长度	
+		var packetLen = owner.getPacketLen(extra.pData, offset)
+
+		// 不完整
+		if(unreadLen < packetLen){
+			extra.toUnread(offset, unreadLen);
+			return ; 
+		}
+
+		if(owner.onPacket){
+			owner.onPacket(topointer(extra.pData, offset), packetLen);
+		}
+		
+		// 偏移到下个数据
+		offset += packetLen;
+		
+		unreadLen -= packetLen;
+		// 读完了
+		if(unreadLen == 0){ 
+			extra.reset();
+			return ; 
+		}
+	}		
+}
+
+onWsMessageComplete = function(component){
+	var state = component.getWsMessageState();
+	if(state[["opCode"]] == 0x9/*Ping*/){
+		component.sendWsMessage(null, 0xA/*Pong*/);
+		return ; 
+	}
+	elseif(state[["opCode"]] == 0x1/*text*/){
+		var extra = getUserExtra(component.extra);
+		var str = extra.getString();
+		if(owner.onText){
+			owner.onText(str)
+		}
+		return ; 
+	}
+	
+	var extra = getUserExtra(component.extra);
+
+	// 完全是用户自己处理消息
+	if(owner.parseMsg){
+		owner.parseMsg(extra)
+		return ; 
+	}
+	
+	// 头部 + 数据部结构的消息
+	owner.parseFixedHeaderMsg(extra)
+}
+
+onClose = function(component){
+	..__postUi__("onClose")
+	
+	var userData = getUserExtra(component.extra);
+	userData.freeExtra();
+	component.extra = null;
+}

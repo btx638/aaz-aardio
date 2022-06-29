@@ -1,4 +1,4 @@
-﻿
+﻿import thread.command;
 
 namespace aaz.libhpsocket.app;
 class base{
@@ -33,6 +33,7 @@ class base{
 		}
 		
 		var thCmd = ..thread.command()
+		this._form = thCmd._form
 	};
 	on = function(name, func){
 		thCmd[name ++ listener._sessionId] = func;

@@ -1,57 +1,114 @@
-﻿import aaz.libhpsocket.app.base;
+﻿import util.metaProperty;
+import aaz.libhpsocket.app.base;
 
 namespace aaz.libhpsocket.app;
 class client{
-	ctor(listener, handlerPath, userDataPath){
+	ctor(listener, component, handlerPath, userDataPath){
 		this = ..aaz.libhpsocket.app.base(listener, handlerPath, userDataPath)
+		this.listener = listener;
+		this.component = component;
+		
 		this["(userData)"] = null
 		
-		..table.gc(this, function(){
-			this._clearIntervalSendTimerId();
-			this._clearKeepConnectTimerId();
+		this.on("onClose", function(){
+			..io.print("断开了")
+			this._clearIntervalTaskTimerId();
 		})
+	};
+	// 必须手动关闭，不要放在自动析构里面
+	close = function(){
+		if(this.listener){
+			this._clearIntervalTaskTimerId();
+			this._clearKeepConnectTimerId();
+			
+			this.component.destroy();
+			this.component.wait();
+			this.listener.destroy();
+				
+			this.component = null;
+			this.listener = null;
+		}
+	};
+	start = function(ip, port){
+		if(!component.start(ip, port, false)){
+			this._clearUserData();
+			return false; 
+		}
+		this.ip = ip;
+		this.port = port;
+		
+		return true; 
+	};
+	isDisconnect = function(){
+		return component.state == 3; 
+	};
+	_clearUserData = function(){
+ 		if(this["(userData)"]){
+			this["(userData)"].freeExtra()
+			this.component.extra = null
+			this["(userData)"] = null
+ 		}	
 	};
 	keepConnect = function(interval=5000){
 		this._clearKeepConnectTimerId()
 		
-		this.keepConnectTimerId = thCmd._form.setInterval( 
+		this.keepConnectTimerId = this._form.setInterval( 
 			function(){
 				if( this.isDisconnect() ){
 					if(this.onDisconnect){
 						this.onDisconnect();
 					}
-					this._reconnect()
-				}
-			},interval 
-		)
-	};
-	startIntervalSend = function(interval=10000){
-		this._clearIntervalSendTimerId();
-		
-		this.intervalSendTimerId = thCmd._form.setInterval( 
-			function(){
-				if(listener){
-					if(this.intervalSend){
-						var res = this.intervalSend();
-						if(res){
-							component.sendWsMessage(res);
-						}
+					if(this._reconnect){
+						this._reconnect()
 					}
 				}
 			},interval 
 		)
 	};
-	_clearIntervalSendTimerId = function(){
-		if(this.intervalSendTimerId){
-			thCmd._form.clearInterval(this.intervalSendTimerId)
-			this.intervalSendTimerId = null
+	startIntervalTask = function(interval=10000){
+		this._clearIntervalTaskTimerId();
+		
+		this.intervalTaskTimerId = this._form.setInterval( 
+			function(){
+				if(this.listener){
+					if(this._intervalTask){
+						this._intervalTask();
+					}
+				}
+			},interval 
+		)
+	};
+	_clearIntervalTaskTimerId = function(){
+		if(this.intervalTaskTimerId){
+			this._form.clearInterval(this.intervalTaskTimerId)
+			this.intervalTaskTimerId = null
 		}
 	};
 	_clearKeepConnectTimerId = function(){
 		if(this.keepConnectTimerId){
-			thCmd._form.clearInterval(this.keepConnectTimerId)
+			this._form.clearInterval(this.keepConnectTimerId)
 			this.keepConnectTimerId = null
 		}
-	};
-	
+	};	
+	@_metaProperty;
+}
+namespace client{
+    _metaProperty = ..util.metaProperty(
+    	userData = {
+    		_get = function(){ 
+    		    return owner["(userData)"]; 
+    		}
+    		_set = function( value ){
+    		    if(value === null){
+					owner._clearUserData()
+					return ; 
+    		    }
+    		    ..io.print("set")
+    		    // 先清空先前设置过的
+ 				owner._clearUserData()
+    		    owner.component.extra = value.buildExtra(); 
+    		    owner["(userData)"] = value
+    		} 	
+    	};
+    )      	
 }
