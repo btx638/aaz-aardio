@@ -1,0 +1,38 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=759;bottom=469)
+winform.add(
+button={cls="button";text="Button";left=112;top=104;right=184;bottom=160;z=1}
+)
+/*}}*/
+
+io.open()
+import aaz.bilibili.danmu;
+
+var danmu = aaz.bilibili.danmu()
+
+danmu.on("connect", function(){
+	// 认证成功，开始发送心跳包等任务 
+	danmu.startIntervalTask(10000);
+	// 开启断线自动重连
+	danmu.keepConnect(10000)
+})
+
+danmu.on("count", function(count){
+//	io.print("人气：" ++ count)
+})
+
+danmu.on("danmu", function(info){
+	io.print(info.nick ++ "：" ++ info.txt)
+})
+
+// 连接房间
+danmu.connect("545068")
+
+// 停止
+winform.button.oncommand = function(id,event){
+	danmu.stop()
+}
+
+winform.show();
+win.loopMessage();

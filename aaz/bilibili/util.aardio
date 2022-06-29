@@ -1,0 +1,22 @@
+﻿import inet.whttp;
+import web.json;
+
+namespace aaz.bilibili.util;
+
+getInfo = function(roomId){
+	var url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=" ++ roomId ++ "&type=0"
+	var whttp = ..inet.whttp()
+	var html, err = whttp.get(url)
+	if(!html){
+		return null, err; 
+	}
+	var tab = ..web.json.tryParse(html)
+	if(type(tab) != type.table){
+		return null, "解析 json 失败"; 
+	}
+	if(tab.code != 0){
+		return null, tab.message; 
+	}
+
+	return tab.data.host_list, tab.data.token; 
+}

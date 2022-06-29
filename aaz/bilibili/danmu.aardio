@@ -1,0 +1,34 @@
+﻿import aaz.libhpsocket.app.ssl.websocket.client;
+import aaz.bilibili.handler;
+import aaz.bilibili.userData;
+import aaz.bilibili.util;
+import aaz.bilibili.packet;
+
+namespace aaz.bilibili;
+class danmu{
+	ctor(){
+		this = ..aaz.libhpsocket.app.ssl.websocket.client("aaz.bilibili.handler", "aaz.bilibili.userData");
+	};
+	connect = function(roomId){
+		var hostList, token = ..aaz.bilibili.util.getInfo(roomId);
+		if(!hostList){ 
+			return null, token; 
+		}
+		
+		this.roomId = roomId;
+		
+		// 定义组件的 userData
+		this.userData = ..aaz.bilibili.userData(roomId, token, "/sub", "https://live.bilibili.com")
+		return this.start(hostList[1].host, hostList[1].wss_port);
+	};
+	// 定义重连函数
+	_reconnect = function(){
+		if(this.roomId){
+			return this.connect(this.roomId); 
+		}	
+	};
+	// 定义定时任务函数，例如发送心跳消息
+	_intervalTask = function(){
+		this.send(..aaz.bilibili.packet.heartbeatPack)
+	}
+}

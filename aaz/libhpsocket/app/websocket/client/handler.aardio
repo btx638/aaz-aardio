@@ -10,11 +10,8 @@ var getUserExtra = function(extra){
 	
 var sendWsUpgradeRequest = function(component){
 	var userData = getUserExtra(component.extra);
-	var wsPath = userData.wsPath; 
-	var wsOrigin = userData.wsOrigin;
-
-	wsPath = ..string.str(wsPath) 
-	wsOrigin = ..string.str(wsOrigin)
+	var wsPath = userData.wsPath.value; 
+	var wsOrigin = userData.wsOrigin.value; 
 	
 	wsPath = #wsPath ? wsPath : null
 	var baseHeaders = #wsOrigin ? {["Origin"] = wsOrigin} : null
@@ -26,7 +23,7 @@ var sendWsUpgradeRequest = function(component){
 				baseHeaders);
 				
 	if(wsKey){
-		userData.wsKey = wsKey;
+		userData.wsKey.value = wsKey; 
 		userData.updateExtra();
 		return true; 
 	}
@@ -35,7 +32,7 @@ var sendWsUpgradeRequest = function(component){
 
 var checkWsUpgradeResponse = function(component){
     var extra = getUserExtra(component.extra);	
-    var wsKey = extra.wsKey; 
+    var wsKey = extra.wsKey.value; 
     
 	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse2(component, wsKey);
 }

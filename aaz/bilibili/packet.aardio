@@ -1,0 +1,141 @@
+﻿import web.json;
+import aaz.libbrotli;
+
+namespace aaz.bilibili.packet;
+
+WS_OP_HEARTBEAT = 2;
+WS_OP_HEARTBEAT_REPLY = 3;
+WS_OP_MESSAGE = 5;
+WS_OP_USER_AUTHENTICATION = 7;
+WS_OP_CONNECT_SUCCESS = 8;
+WS_PACKAGE_HEADER_TOTAL_LENGTH = 16;
+WS_PACKAGE_OFFSET = 0;
+WS_HEADER_OFFSET = 4;
+WS_VERSION_OFFSET = 6;
+WS_OPERATION_OFFSET = 8;
+WS_SEQUENCE_OFFSET = 12;
+WS_BODY_PROTOCOL_VERSION_NORMAL = 0;
+WS_BODY_PROTOCOL_VERSION_BROTLI = 3;
+WS_HEADER_DEFAULT_VERSION = 1;
+WS_HEADER_DEFAULT_OPERATION = 1;
+WS_HEADER_DEFAULT_SEQUENCE = 1;
+
+// 登录回复
+WS_AUTH_OK = 0;
+WS_AUTH_TOKEN_ERROR = 101;
+
+// 头部格式
+class header{
+	ctor(operation, protocolVersion,  sequenceId){
+		if(operation){
+			this.operation = ..raw.swap(operation,"int");
+		}
+		
+		if(protocolVersion){
+			this.protocolVersion = ..raw.swap(protocolVersion, "word");
+		}
+
+		if(sequenceId){
+			this.sequenceId = ..raw.swap(sequenceId,"int");
+		}
+	}
+	int packetLength;
+	word headerLength = 4096;
+	word protocolVersion;
+	int operation;
+	int sequenceId;	
+}
+namespace header{
+    _metaProperty = ..util.metaProperty(
+    
+    	属性 = {
+    		_get = function(){ 
+    			/*读取属性代码写在这里*/
+    			return null;
+    		}
+    		_set = function( value ){
+    			/*写入属性代码写在这里*/
+    			..io.print( owner,value)
+    		} 	
+    	};
+    )	
+}
+
+
+unpack = function(pData, proc){ 
+	var ret = ..raw.convert(pData, header())
+	
+	var packetLength = ..raw.swap(ret.packetLength, "int")
+	//var headerLength = ..raw.swap(ret.headerLength, "word")
+	var protocolVersion = ..raw.swap(ret.protocolVersion, "word")
+	var operation = ..raw.swap(ret.operation, "int")
+	var sequenceId = ..raw.swap(ret.sequenceId, "int")
+	
+	var payloadLen = packetLength - WS_PACKAGE_HEADER_TOTAL_LENGTH;
+	
+
+	if(operation == WS_OP_CONNECT_SUCCESS){
+		//var str = ..raw.tostring(pData, 17, packetLength) 
+		//..io.print(str)
+		proc("connect")
+	}
+	elseif(operation == WS_OP_HEARTBEAT_REPLY){
+		var count = ..raw.convert(pData, {int v}, WS_PACKAGE_HEADER_TOTAL_LENGTH ).v;
+		count = ..raw.swap(count, "int")
+		proc("count", count)
+		return true; 
+	}
+	elseif(operation == WS_OP_MESSAGE){
+		// brotli解压
+		if(protocolVersion == WS_BODY_PROTOCOL_VERSION_BROTLI){
+			var ptr = ..aaz.libbrotli.decompress3(topointer(pData, WS_PACKAGE_HEADER_TOTAL_LENGTH), payloadLen)
+			if(ptr){
+				unpack(ptr, proc)
+				..raw.realloc(0, ptr)
+			} 
+		}
+		elseif(protocolVersion == WS_BODY_PROTOCOL_VERSION_NORMAL){
+			// 弹幕内容
+			var str = ..raw.tostring(pData, 17, packetLength) 
+			var tab = ..web.json.parse(str)
+			if(tab.cmd == "DANMU_MSG"){ 
+				proc("danmu",{
+					nick = tab.info[3][2];
+					txt = tab.info[2];
+				})
+			}
+		}
+	}	
+}
+
+
+pack = function(payload, operation, protocolVersion=1/*WS_HEADER_DEFAULT_VERSION*/, sequenceId=1/*WS_HEADER_DEFAULT_SEQUENCE*/){
+	var bin = {
+		struct header = header(operation, protocolVersion, sequenceId);
+		byte payload[] = payload;
+	}
+	bin.header.packetLength = ..raw.swap(WS_PACKAGE_HEADER_TOTAL_LENGTH + #payload, "int")	
+	return bin; 
+}
+
+heartbeatPack = pack("[object Object]",2/*WS_OP_HEARTBEAT*/);
+
+getAuthPack = function(roomId, token){
+	var tab = {
+		key = ..string.match(token, "\S+");
+		platform = "web";
+		protover = 3;
+		roomid = tonumber(roomId);
+		type = 2;
+		uid = 0;
+	}
+	var payload = ..web.json.stringify(tab)
+		
+	return  pack(payload, 7/*WS_OP_USER_AUTHENTICATION*/)	
+}
+
+
+/*               
+https://github.com/lovelyyoshino/Bilibili-Live-API/blob/master/API.WebSocket.md
+https://github.com/AndrewXiongGe/AndrewXiongGe.github.io/blob/4ae09b21bc7dec7f6c17383fd7cc4d73386273e7/bliveproxy.js
+*/

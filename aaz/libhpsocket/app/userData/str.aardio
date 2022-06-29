@@ -1,0 +1,36 @@
+﻿import util.metaProperty;
+
+namespace aaz.libhpsocket.app.userData;
+class str{
+	ctor(s){
+		this@ = _metaProperty;
+		if(s){
+			if(type(s) != type.string){
+				error("参数@1必须是字符串",2)
+			}
+			this.value = s;	
+		}
+	}
+	pointer pValue;	
+}
+namespace str{
+    _metaProperty = ..util.metaProperty(
+    	value = {
+            _get = function(){
+            	if(owner.pValue){
+            		return ..raw.str(owner.pValue); 
+            	}
+            }
+            
+            _set = function(v){
+            	if(v===null){
+            		if(owner.pValue){
+            		    owner.pValue = ..raw.realloc(0, owner.pValue)
+            			return ; 
+            		}
+            	}
+            	owner.pValue = ..raw.realloc(#v, owner.pValue, v);
+            }	
+    	};
+    )	
+}

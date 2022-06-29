@@ -3,6 +3,7 @@
 namespace aaz.libhpsocket.app;
 class userData{
 	ctor(){
+		this.freeList = {};
 	}
 	// 存放原始的传输数据
 	pointer pData;
@@ -78,9 +79,18 @@ namespace userData{
 		};
 		freeExtra = function(){
 			owner.freeData();
+			for(i=1;#owner.freeList;1){
+				owner.freeList[i]();
+			}
+			
 			if(owner.extra){
 				owner.extra = ..raw.realloc(0, owner.extra);
 			}
 		};
+		free = {
+			_set = function(v){
+				..table.push(owner.freeList, v)
+			}
+		}
     )	
 }

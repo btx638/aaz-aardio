@@ -29,7 +29,11 @@ class base{
 			return __handler__.onClose(component, connId, enOperation, errCode);
 		}
 	};
-	send = function(data){
-		component.sendWsMessage(data);	
-	};	
+	send = function(data, ...){
+		return component.sendWsMessage(data, ...);	
+	};
+	stop = function(){
+		return component.stop(); 
+	}
+		
 }

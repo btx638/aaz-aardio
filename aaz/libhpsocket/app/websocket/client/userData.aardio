@@ -1,14 +1,20 @@
 ﻿import aaz.libhpsocket.app.userData;
+import aaz.libhpsocket.app.userData.str;
 
 namespace aaz.libhpsocket.app.websocket.client;
 class userData{
 	ctor(wsPath, wsOrigin){
 		this = ..aaz.libhpsocket.app.userData();
-		this.wsPath = wsPath;
-		this.wsOrigin = wsOrigin;
 	}
-	// 验证的 key
-	BYTE wsKey[24];
-	BYTE wsPath[30];
-	BYTE wsOrigin[50];
+	free = function(){
+		this.wsKey.value = null;
+		this.wsPath.value = null;
+		this.wsOrigin.value = null;	
+	}
+	struct wsKey = ..aaz.libhpsocket.app.userData.str();
+	struct wsPath = ..aaz.libhpsocket.app.userData.str(wsPath);
+	struct wsOrigin = ..aaz.libhpsocket.app.userData.str(wsOrigin);
+}
+namespace userData{
+	
 }
