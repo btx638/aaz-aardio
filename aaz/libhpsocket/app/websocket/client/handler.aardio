@@ -37,37 +37,6 @@ var checkWsUpgradeResponse = function(component){
 	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse2(component, wsKey);
 }
 
-onHandShake = function(component){
-	return sendWsUpgradeRequest(component)
-}
-
-onUpgrade = function(component, upgradeType){
-	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
-		return 2/*_HR_ERROR*/; 
-	}
-	
-	if(!checkWsUpgradeResponse(component)){
-		return 2/*_HR_ERROR*/; 
-	}
-
-	if(owner.afterUpgrade){
-		var res = owner.afterUpgrade(getUserExtra(component.extra))
-		if(res){ 
-			component.sendWsMessage(res);
-		}
-	}
-}
-
-onWsMessageHeader = function(component, final, reserved, opCode, mask, bodyLen){
-
-}
-
-
-onWsMessageBody = function(component, pData, len){ 
-	var userData = getUserExtra(component.extra);
-	userData.concat(pData, len);
-}
-
 parseFixedHeaderMsg = function(extra){	
 	//  剩余数据的长度
 	var unreadLen = ..raw.sizeof(extra.pData);
@@ -100,37 +69,60 @@ parseFixedHeaderMsg = function(extra){
 	}		
 }
 
+onHandShake = function(component){
+	return sendWsUpgradeRequest(component)
+}
+
+onUpgrade = function(component, upgradeType){
+	if(upgradeType != 1/*_HUT_WEB_SOCKET*/ ){
+		return 2/*_HR_ERROR*/; 
+	}
+	
+	if(!checkWsUpgradeResponse(component)){
+		return 2/*_HR_ERROR*/; 
+	}
+
+	if(owner.afterUpgrade){
+		var res = owner.afterUpgrade(getUserExtra(component.extra))
+		if(res){ 
+			component.sendWsMessage(res);
+		}
+	}
+}
+
+onWsMessageHeader = function(component, final, reserved, opCode, mask, bodyLen){
+
+}
+
+onWsMessageBody = function(component, pData, len){ 
+	var userData = getUserExtra(component.extra);
+	userData.concat(pData, len);
+}
+
 onWsMessageComplete = function(component){
 	var state = component.getWsMessageState();
 	if(state[["opCode"]] == 0x9/*Ping*/){
 		component.sendWsMessage(null, 0xA/*Pong*/);
-		return ; 
 	}
-	elseif(state[["opCode"]] == 0x1/*text*/){
+	elseif(state[["opCode"]] == 0x1/*text*/){ 
 		var extra = getUserExtra(component.extra);
 		var str = extra.getString();
-		if(owner.onText){
+		if(owner.onTextMsg){
 			owner.onText(str)
 		}
-		return ; 
 	}
-	
-	var extra = getUserExtra(component.extra);
-
-	// 完全是用户自己处理消息
-	if(owner.parseMsg){
-		owner.parseMsg(extra)
-		return ; 
+	elseif( state[["opCode"]] == 0x2/*bin*/ ){
+		if(owner.onBinMsg){
+			var extra = getUserExtra(component.extra);
+			owner.onBinMsg(extra)
+		}
 	}
-	
-	// 头部 + 数据部结构的消息
-	owner.parseFixedHeaderMsg(extra)
 }
 
 onClose = function(component){
-	..__postUi__("onClose")
-	
 	var userData = getUserExtra(component.extra);
 	userData.freeExtra();
 	component.extra = null;
+	
+	..__postUi__("onClose")
 }

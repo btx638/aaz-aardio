@@ -2,10 +2,11 @@
 import web.json;
 
 namespace aaz.bilibili.util;
+var whttp = ..inet.whttp()
 
 getInfo = function(roomId){
 	var url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=" ++ roomId ++ "&type=0"
-	var whttp = ..inet.whttp()
+	
 	var html, err = whttp.get(url)
 	if(!html){
 		return null, err; 
@@ -19,4 +20,16 @@ getInfo = function(roomId){
 	}
 
 	return tab.data.host_list, tab.data.token; 
+}
+
+getRoomId = function(url){
+	var header = /**
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+**/
+	var html, err, code = whttp.get(url,header)
+	if(!html){
+		return null, err, code; 
+	}
+
+	return ..string.match(html, `<@window.__NEPTUNE_IS_MY_WAIFU__={@>.+?<@"room_id"@>\:(\d+)\,`); 
 }

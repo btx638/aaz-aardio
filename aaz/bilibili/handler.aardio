@@ -13,7 +13,7 @@ afterUpgrade = function(userData){
 	return  ..aaz.bilibili.packet.getAuthPack(roomId, token)
 }
 
-parseMsg = function(extra){
+onBinMsg = function(extra){
 	//  剩余数据的长度
 	var unreadLen = ..raw.sizeof(extra.pData);
 	//  指针偏移，始终指向数据的头部
@@ -24,6 +24,7 @@ parseMsg = function(extra){
 		var header = ..raw.convert(extra.pData, ..aaz.bilibili.packet.header(), offset)
 		// 标准消息长度
 		var packetLen = ..raw.swap(header.packetLength, "int");
+
 		// 不完整，存着下次再读
 		if(unreadLen < packetLen){ ..io.print("不完整")
 			extra.toUnread(offset, unreadLen);
@@ -31,7 +32,7 @@ parseMsg = function(extra){
 		}
 		
 		// 心跳回复就直接结束
-		var isHeartbeat = ..aaz.bilibili.packet.unpack(topointer(extra.pData, offset), function(msgType, ret){
+		var isHeartbeat = ..aaz.bilibili.packet.unpack(extra.pData, offset, function(msgType, ret){
 			..__postUi__(msgType, ret)
 		});
 		if(isHeartbeat){
@@ -45,9 +46,10 @@ parseMsg = function(extra){
 		
 		unreadLen -= packetLen;
 		// 读完了
-		if(unreadLen == 0){ 
+		if(unreadLen == 0){
 			extra.reset();
 			return ; 
 		}
+		..io.print("多个消息")
 	}	
 }

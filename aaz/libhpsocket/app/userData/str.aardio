@@ -26,8 +26,8 @@ namespace str{
             	if(v===null){
             		if(owner.pValue){
             		    owner.pValue = ..raw.realloc(0, owner.pValue)
-            			return ; 
             		}
+            		return ; 
             	}
             	owner.pValue = ..raw.realloc(#v, owner.pValue, v);
             }	

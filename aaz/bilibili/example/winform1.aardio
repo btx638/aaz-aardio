@@ -1,13 +1,22 @@
 import win.ui;
 /*DSG{{*/
-var winform = win.form(text="aardio form";right=759;bottom=469)
+var winform = win.form(text="aardio form";right=759;bottom=351)
 winform.add(
-button={cls="button";text="Button";left=112;top=104;right=184;bottom=160;z=1}
+btnConnect={cls="button";text="连接";left=400;top=8;right=480;bottom=48;z=1};
+btnStop={cls="button";text="停止";left=512;top=16;right=592;bottom=48;z=5};
+edLiveRoomUrl={cls="edit";text="https://live.bilibili.com/7777";left=112;top=16;right=384;bottom=48;edge=1;z=2};
+listview={cls="listview";left=24;top=64;right=744;bottom=328;edge=1;fullRow=1;gridLines=1;z=4};
+static={cls="static";text="直播间链接：";left=16;top=16;right=104;bottom=40;transparent=1;z=3}
 )
 /*}}*/
 
 io.open()
+
+winform.listview.insertColumn("昵称",200)
+winform.listview.insertColumn("内容",-1)
+
 import aaz.bilibili.danmu;
+import aaz.bilibili.util;
 
 var danmu = aaz.bilibili.danmu()
 
@@ -18,20 +27,41 @@ danmu.on("connect", function(){
 	danmu.keepConnect(10000)
 })
 
-danmu.on("count", function(count){
-//	io.print("人气：" ++ count)
-})
-
 danmu.on("danmu", function(info){
-	io.print(info.nick ++ "：" ++ info.txt)
+	winform.listview.addItem({info.nick; info.txt})
+	winform.listview.ensureVisible(winform.listview.count)
 })
 
-// 连接房间
-danmu.connect("545068")
+// 系统回调
+danmu.onDisconnect = function(){
+	winform.btnConnect.disabledText = null
+}
+
+winform.btnConnect.oncommand = function(id,event){
+	var url = winform.edLiveRoomUrl.text;
+	if(!string.startWith(url, "https://" ,true)){
+		return ; 
+	}
+	
+	winform.btnConnect.disabledText = "获取房间号..."
+	
+	var roomId, err = aaz.bilibili.util.getRoomId(url)
+	if(!roomId){  io.print(err)
+		winform.btnConnect.disabledText = null
+		return ; 
+	}
+
+	winform.btnConnect.disabledText = "连接..."
+
+	danmu.connect(roomId)
+	
+	winform.btnConnect.disabledText = "已连接"
+}
 
 // 停止
-winform.button.oncommand = function(id,event){
+winform.btnStop.oncommand = function(id,event){
 	danmu.stop()
+	
 }
 
 winform.show();

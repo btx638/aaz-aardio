@@ -11,8 +11,10 @@ class client{
 		this["(userData)"] = null
 		
 		this.on("onClose", function(){
-			..io.print("断开了")
 			this._clearIntervalTaskTimerId();
+			if(this.onDisconnect){
+				this.onDisconnect();
+			}
 		})
 	};
 	// 必须手动关闭，不要放在自动析构里面
@@ -55,9 +57,7 @@ class client{
 		this.keepConnectTimerId = this._form.setInterval( 
 			function(){
 				if( this.isDisconnect() ){
-					if(this.onDisconnect){
-						this.onDisconnect();
-					}
+
 					if(this._reconnect){
 						this._reconnect()
 					}
@@ -99,13 +99,11 @@ namespace client{
     		    return owner["(userData)"]; 
     		}
     		_set = function( value ){
+    		    // 如果断开连接时在监听函数内部已释放，不要重复释放，否则程序会崩溃
     		    if(value === null){
 					owner._clearUserData()
 					return ; 
     		    }
-    		    ..io.print("set")
-    		    // 先清空先前设置过的
- 				owner._clearUserData()
     		    owner.component.extra = value.buildExtra(); 
     		    owner["(userData)"] = value
     		} 	
