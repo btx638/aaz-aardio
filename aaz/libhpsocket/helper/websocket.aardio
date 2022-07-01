@@ -18,7 +18,8 @@ var genClientKey = function(){
 	return ..crypt.bin.encodeBase64(..string.random(16));
 }
 
-getSecAccept = function(clientKey){
+// 客户端的 key 加密后发送给服务端
+var getSecAccept = function(clientKey){
 	return sha1(..string.trim(clientKey) ++ magicKey);
 }
 
@@ -39,6 +40,7 @@ genClientHeaders = function(host, origin, baseHeaders){
 	return headers, clientKey;	
 }
 
+// 验证服务端返回的 key 
 verifyKey = function(clientKey, serverKey){
 	return getSecAccept(clientKey) == serverKey;
 }

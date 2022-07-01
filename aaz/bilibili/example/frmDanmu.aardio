@@ -1,0 +1,18 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="弹幕";right=759;bottom=469)
+winform.add(
+listview={cls="listview";left=16;top=24;right=744;bottom=440;edge=1;z=1}
+)
+/*}}*/
+
+winform.listview.insertColumn("昵称",200)
+winform.listview.insertColumn("内容",-1)
+
+subscribe("danmu",function(info){
+	winform.listview.addItem({info.nick; info.txt})
+	winform.listview.ensureVisible(winform.listview.count)
+} )
+
+winform.show();
+win.loopMessage();

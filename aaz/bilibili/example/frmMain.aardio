@@ -1,0 +1,62 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=847;bottom=679)
+winform.add(
+btnConnect={cls="button";text="连接";left=192;top=8;right=272;bottom=48;z=1};
+btnStop={cls="button";text="停止";left=304;top=16;right=384;bottom=48;z=4};
+edLiveRoomId={cls="edit";text="545068";left=88;top=16;right=160;bottom=48;edge=1;z=2};
+static={cls="static";text="直播间id：";left=16;top=16;right=104;bottom=40;transparent=1;z=3};
+tab={cls="tab";left=16;top=56;right=832;bottom=672;edge=1;z=5}
+)
+/*}}*/
+
+io.open()
+
+winform.tab.loadForm("\frmMsg.aardio")
+winform.tab.loadForm("\frmDanmu.aardio")
+
+import aaz.bilibili.danmu;
+import aaz.bilibili.util;
+
+var danmu = aaz.bilibili.danmu()
+
+danmu.on("connect", function(){
+	winform.btnConnect.disabledText = "已连接"
+	
+	// 认证成功，开始发送心跳包等任务 
+	danmu.startIntervalTask(10000);
+	// 开启断线自动重连
+//	danmu.keepConnect(10000)
+})
+
+danmu.on("danmu", function(info){
+	publish("danmu", info)
+})
+
+danmu.on("WS_OP_MESSAGE", function(str){
+	publish("msg", str)
+})
+
+// 系统回调
+danmu.onDisconnect = function(){
+	winform.btnConnect.disabledText = null
+}
+
+winform.btnConnect.oncommand = function(id,event){
+	var roomId = winform.edLiveRoomId.text;
+
+	winform.btnConnect.disabledText = "连接..."
+
+	if( !danmu.connect(roomId) ){
+		winform.btnConnect.disabledText = null
+	}
+}
+
+// 停止
+winform.btnStop.oncommand = function(id,event){
+	danmu.stop()
+	
+}
+
+winform.show();
+win.loopMessage();

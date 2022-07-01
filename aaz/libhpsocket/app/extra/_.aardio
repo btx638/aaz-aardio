@@ -22,6 +22,7 @@ namespace extra{
 			if(!owner.pointer){
 				error("未绑定指针 ",2)
 			}
+			// 把结构体的数据写入指针
 			..raw.convert(owner, owner.pointer); 
 		};
 		free = {
@@ -32,8 +33,11 @@ namespace extra{
 		value = {
 			_get = function(){
 				if(!owner.pointer){
+					// 创建动态指针存放结构体
 					owner.pointer = ..raw.realloc(..raw.sizeof(owner), null, owner); 
+					// 新建原始的通讯数据
 					owner.data.new()
+					// 写入指针
 					owner.update()
 				}
 				return owner.pointer; 
@@ -47,9 +51,11 @@ namespace extra{
 					for(i=1;#owner.freeList;1){
 						owner.freeList[i]();
 					}
+					// 释放本身的指针
 					owner.pointer = ..raw.realloc(0, owner.pointer);
 					return ; 	
 				}
+				// 把外部指针的数据写入结构体
 				..raw.convert(v, owner);
 				owner.pointer = v; 
 			}

@@ -8,7 +8,8 @@ var getUserExtra = function(extra){
 	userExtra.value = extra
 	return userExtra; 		
 }
-	
+
+// 发送升级请求	
 var sendWsUpgradeRequest = function(component){
 	var extra = getUserExtra(component.extra);
 	var wsPath = extra.wsPath.value; 
@@ -17,7 +18,7 @@ var sendWsUpgradeRequest = function(component){
 	wsPath = #wsPath ? wsPath : null
 	var baseHeaders = #wsOrigin ? {["Origin"] = wsOrigin} : null
 	
-	// 发送升级请求
+	
 	var wsKey = ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest2(
 				component, 
 				wsPath,
@@ -109,13 +110,12 @@ onWsMessageComplete = function(component){
 	}
 	elseif(state[["opCode"]] == 0x1/*text*/){ 
 		var extra = getUserExtra(component.extra);
-		var str = extra.data.getString();
-		extra.data.new()
-		extra.update()
-		
 		if(owner.onTextMsg){
+			var str = extra.data.getString();
 			owner.onText(str)
 		}
+		extra.data.new()
+		extra.update()
 	}
 	elseif( state[["opCode"]] == 0x2/*bin*/ ){
 		if(owner.onBinMsg){

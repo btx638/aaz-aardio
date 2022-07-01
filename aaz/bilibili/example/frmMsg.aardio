@@ -1,0 +1,25 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="分析";right=759;bottom=469)
+winform.add(
+edit={cls="edit";left=16;top=224;right=744;bottom=456;edge=1;hscroll=1;multiline=1;vscroll=1;z=1};
+listbox={cls="listbox";left=16;top=8;right=744;bottom=216;edge=1;hscroll=1;items={};vscroll=1;z=2}
+)
+/*}}*/
+
+subscribe("msg",function(str){
+	winform.listbox.add(str)
+} )
+
+import web.json;
+
+winform.listbox.oncommand = function(id,event){ 
+	if( event == 0x1/*_LBN_SELCHANGE*/ ){
+		var txt = winform.listbox.selText
+        winform.edit.text = web.json.stringify( web.json.parse(txt), true)
+	}
+}
+
+
+winform.show();
+win.loopMessage();

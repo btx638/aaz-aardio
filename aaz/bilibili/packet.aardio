@@ -90,7 +90,8 @@ unpack = function(pData, offset, proc){
 			} 
 		}
 		elseif(protocolVersion == WS_BODY_PROTOCOL_VERSION_NORMAL){
-			var str = ..raw.tostring(pData, offset + 17, offset + 17 + payloadLen) 
+			var o = offset + 17
+			var str = ..raw.tostring(pData, o, o + payloadLen) 
 			var tab = ..web.json.parse(str)
 			if(tab.cmd == "DANMU_MSG"){ 
 				proc("danmu",{
@@ -98,10 +99,7 @@ unpack = function(pData, offset, proc){
 					txt = tab.info[2];
 				})
 			}
-			else {
-				
-			}
-			
+			proc("WS_OP_MESSAGE", str)
 		}
 	}
 	return packetLength; 	
