@@ -4,15 +4,15 @@ import win.guid;
 namespace aaz.libhpsocket;
 class listener{
     ctor(componentClassPath){
-		if(!componentClassPath) error("@参数1 componentClassPath不能为空", 2);
-     	
+		if(!componentClassPath) error("参数@1 componentClassPath不能为空", 2);
+     	// 给监听分配 guid 
         this._sessionId = tostring(..win.guid.create());
         // 避免监听器被自动回收
         ..table.push(__gcProtectTable__, this);
     };   
 	createThreadCallback = function(callback, proto){
-		if(!callback) error("@参数1 线程回调函数不能为空", 2);
-		if(!proto) error("@参数2 线程回调函数原型不能为空", 2);
+		if(!callback) error("参数@1 线程回调函数不能为空", 2);
+		if(!proto) error("参数@2 线程回调函数原型不能为空", 2);
 		
 		return ..thread.tostdcall( 
 			function(pSocket, ...){	

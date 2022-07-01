@@ -2,29 +2,31 @@
 
 namespace aaz.libhpsocket.app.websocket.client.handler;
 
+// 读取 extra
 var getUserExtra = function(extra){
-	var userData = ..__userDataClass__();
-	userData.fromExtra(extra)
-	return userData; 		
+	var userExtra = ..__userExtraClass__();
+	userExtra.value = extra
+	return userExtra; 		
 }
 	
 var sendWsUpgradeRequest = function(component){
-	var userData = getUserExtra(component.extra);
-	var wsPath = userData.wsPath.value; 
-	var wsOrigin = userData.wsOrigin.value; 
+	var extra = getUserExtra(component.extra);
+	var wsPath = extra.wsPath.value; 
+	var wsOrigin = extra.wsOrigin.value; 
 	
 	wsPath = #wsPath ? wsPath : null
 	var baseHeaders = #wsOrigin ? {["Origin"] = wsOrigin} : null
 	
-
+	// 发送升级请求
 	var wsKey = ..aaz.libhpsocket.helper.httpClient.sendWsUpgradeRequest2(
 				component, 
 				wsPath,
 				baseHeaders);
 				
 	if(wsKey){
-		userData.wsKey.value = wsKey; 
-		userData.updateExtra();
+		// 保存升级 key
+		extra.wsKey.value = wsKey; 
+		extra.update();
 		return true; 
 	}
 	
@@ -69,7 +71,7 @@ parseFixedHeaderMsg = function(extra){
 	}		
 }
 
-onHandShake = function(component){
+onHandShake = function(component){ 
 	return sendWsUpgradeRequest(component)
 }
 
@@ -95,8 +97,9 @@ onWsMessageHeader = function(component, final, reserved, opCode, mask, bodyLen){
 }
 
 onWsMessageBody = function(component, pData, len){ 
-	var userData = getUserExtra(component.extra);
-	userData.concat(pData, len);
+	var extra = getUserExtra(component.extra);
+	extra.data.concat(pData, len);
+	extra.update()
 }
 
 onWsMessageComplete = function(component){
@@ -106,7 +109,10 @@ onWsMessageComplete = function(component){
 	}
 	elseif(state[["opCode"]] == 0x1/*text*/){ 
 		var extra = getUserExtra(component.extra);
-		var str = extra.getString();
+		var str = extra.data.getString();
+		extra.data.new()
+		extra.update()
+		
 		if(owner.onTextMsg){
 			owner.onText(str)
 		}
@@ -120,8 +126,8 @@ onWsMessageComplete = function(component){
 }
 
 onClose = function(component){
-	var userData = getUserExtra(component.extra);
-	userData.freeExtra();
+	var extra = getUserExtra(component.extra);
+	extra.value = null;
 	component.extra = null;
 	
 	..__postUi__("onClose")

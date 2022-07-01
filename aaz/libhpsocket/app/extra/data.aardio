@@ -1,0 +1,69 @@
+﻿import util.metaProperty;
+
+namespace aaz.libhpsocket.app.extra;
+class data{
+	ctor(){
+		this@ = _metaProperty;
+	};
+	pointer pValue;	
+}
+namespace data{
+    _metaProperty = ..util.metaProperty(
+    	value = {
+    	    _get = function(){
+    	    	return owner.pValue; 
+    	    }
+            _set = function(v){
+            	if(v===null){
+            		if(owner.pValue){
+            		    owner.pValue = ..raw.realloc(0, owner.pValue)
+            		}
+            		return ; 
+            	}
+            }	
+    	};
+    	convert = function(struct, offset){
+    		return ..raw.convert(owner.pValue, struct, offset); 
+    	};
+    	pointer = {
+    	    _get = function(){
+    	    	return owner.pValue; 
+    	    }
+    	};
+    	length = {
+    	    _get = function(){
+    	    	return ..raw.sizeof(owner.pValue); 
+    	    }   
+    	};
+		getString = function(){
+			if(!owner.pValue){
+				error("未绑定指针 ",2)
+			}
+			return ..raw.tostring(owner.pValue, 1, ..raw.sizeof(owner.pValue))
+		};
+		toUnread = function(offset, unreadLen){
+			if(!owner.pValue){
+				error("未绑定指针 ",2)
+			}
+			
+			// 构建剩余的未读取的数据的动态指针
+			var unread = ..raw.realloc(unreadLen);
+			unread = ..raw.concat(unread, topointer(owner.pValue, offset), unreadLen);  
+			
+			// 释放原来的数据
+			owner.value = null;
+			
+			// 更新未读取数据的指针
+			owner.pValue = unread;
+		};
+		new = function(){
+			owner.pValue = ..raw.realloc(1, owner.pValue, ""); 
+		};
+		concat = function(pData, len){
+			if(!owner.pValue){
+				error("未绑定指针 ",2)
+			}
+			owner.pValue = ..raw.concat(owner.pValue, pData, len);
+		};
+    )	
+}

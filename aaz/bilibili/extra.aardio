@@ -1,0 +1,14 @@
+﻿import aaz.libhpsocket.app.websocket.client.extra;
+
+namespace aaz.bilibili;
+class extra{
+	ctor(roomId, token, wsPath, wsOrigin){
+		this = ..aaz.libhpsocket.app.websocket.client.extra(wsPath, wsOrigin);
+	};
+	free = function(){
+		this.roomId.value = null;
+		this.token.value = null;
+	};
+	struct roomId = ..aaz.libhpsocket.app.extra.str(roomId);
+	struct token = ..aaz.libhpsocket.app.extra.str(token);
+}

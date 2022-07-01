@@ -8,7 +8,15 @@ class base{
 		listener.onHandShake = function(component, connId){
 			return __handler__.onHandShake(component);
 		}
+				
+		listener.onHeader = function(component, connId, name, value){
+    	
+		}
 		
+		listener.onHeadersComplete = function(component, connId){	
+    	
+		}
+
 		listener.onUpgrade = function(component, connId, upgradeType){
 			return __handler__.onUpgrade(component, upgradeType);	
 		}

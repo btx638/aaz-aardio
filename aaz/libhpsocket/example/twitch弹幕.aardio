@@ -1,0 +1,222 @@
+io.open()
+
+import hpsocket.ssl.httpClient
+
+var roomUrl = "https://www.twitch.tv/pikabooirl";
+
+
+var http = hpsocket.ssl.httpClient()
+
+http.threadGlobal = {
+   external = {
+       roomUrl = roomUrl;
+       randomGuestUsername = function(){
+           return "justinfan" ++ math.floor( 8E4 * math.random() + 1E3 ); 
+       }    
+       ownerName = function(){ 
+           return string.match( owner.roomUrl, "<@twitch.tv/@>(.+?)$" ); 
+       }        
+   } 
+}
+
+http.sslSetupContext(0)
+
+/**
+	HR_OK		= 0,	// 成功
+	HR_IGNORE	= 1,	// 忽略
+	HR_ERROR	= 2,	// 错误
+当 OnReceive / OnPrepareListen / OnAccept / OnPrepareConnect / OnConnect / OnHandShake 事件 回调方法返回 HR_ERROR 时，组件会立即中断连接 。
+当 组 件 接 收 到 OnHandShake 事件即说明连接已建立， 并 可以 开始通信。
+ 
+**/
+
+http.onConnect = function(hpHttpClient,connId){
+	io.print( "onConnect--------------", connId )
+	 
+}
+
+http.onReceive = function(hpHttpClient,connId,pData,length){
+	io.print( "onReceive--------------", length )
+	
+	// 3 通知客户端
+	if( length == 2  ){
+		var ret = raw.convert( pData, {BYTE ver;BYTE method});
+		if( ret.ver != 0x5 ){
+			io.print("代理服务器的socks版本不是5")
+			return 2; 
+		}
+		if(	ret.method == 0xFF ){
+			io.print("代理服务器无可接受的方法")
+			return 2; 			
+		}
+		
+		// 4 客户端和服务端根据选定的认证方式执行对应的认证
+		// 认证结束后客户端就可以发送请求信息
+		
+		var host = "irc-ws.chat.twitch.tv"
+		hpHttpClient.send( {
+			BYTE ver = 0x5;
+			BYTE cmd = 0x1;
+			BYTE rsv = 0;
+			BYTE atyp = 0x3;
+			BYTE hostLen = #host;
+			BYTE host[] = host;
+			WORD port = raw.swap(443,"WORD"); 
+		} )
+		return 0;	
+	}
+	
+	// 5 服务器回应客户端的请求
+	var ret = raw.convert( pData, {
+		BYTE ver;
+		BYTE rep;
+		BYTE rsv;
+		BYTE aytp;
+	})
+	if( ret.rep == 0 ) { io.print( table.tostring(ret) )
+		if( ret.aytp == 0x1 ){
+			import  wsock
+			ret = raw.convert( pData, {
+				BYTE ver;
+				BYTE rep;
+				BYTE rsv;
+				BYTE aytp;
+				INT addr;  // INT ip=..raw.swap(..wsock.htonl(..wsock.inet_addr(host)));
+				WORD port;
+			})	  
+			
+			io.print( "代理服务器本地 ip", wsock.inet_ntoa(ret.addr),"监听端口", raw.swap(ret.port,"WORD")   )
+			
+			hpHttpClient.startHttp() 	
+		}
+	}
+}
+
+http.onHandShake = function(hpHttpClient,connId){
+    io.print( "onHandShake--------------", connId )
+    hpHttpClient.sendWsUpgradeRequest("/")
+    
+}
+/**
+/************************************************************************
+名称：HTTP 解析结果标识
+描述：指示 HTTP 解析器是否继续执行解析操作
+************************************************************************/
+typedef enum EnHttpParseResult
+{
+	HPR_OK			= 0,	// 解析成功
+	HPR_SKIP_BODY	= 1,	// 跳过当前请求 BODY（仅用于 OnHeadersComplete 事件）
+	HPR_UPGRADE		= 2,	// 升级协议（仅用于 OnHeadersComplete 事件）
+	HPR_ERROR		= -1,	// 解析错误，终止解析，断开连接
+} En_HP_HttpParseResult;
+**/
+
+/**
+/************************************************************************
+名称：HTTP 协议升级类型
+描述：标识 HTTP 升级为哪种协议
+************************************************************************/
+typedef enum EnHttpUpgradeType
+{
+	HUT_NONE		= 0,	// 没有升级
+	HUT_WEB_SOCKET	= 1,	// WebSocket
+	HUT_HTTP_TUNNEL	= 2,	// HTTP 隧道
+	HUT_UNKNOWN		= -1,	// 未知类型
+} En_HP_HttpUpgradeType;
+**/
+
+http.onUpgrade = function(hpHttpClient,connId,upgradeType){
+    if upgradeType != 1/*HUT_WEB_SOCKET*/ 
+        return 2; 
+    if !hpHttpClient.checkWsUpgradeResponse()
+        return 2; 
+    
+    var username = external.randomGuestUsername(); 
+    
+    hpHttpClient.sendWsMessage("CAP REQ :twitch.tv/tags twitch.tv/commands")
+    hpHttpClient.sendWsMessage("PASS SCHMOOPIIE")
+    hpHttpClient.sendWsMessage( string.format("NICK %s",username) )
+    hpHttpClient.sendWsMessage( string.format("USER %s 8 * :%s",username,username ) )   
+    hpHttpClient.sendWsMessage( string.format("JOIN #%s",external.ownerName() ) )       
+}
+
+http.onWsMessageHeader = function(hpHttpClient,connId,final,reserved,opCode,mask,bodyLen){
+    ..io.print("onWsMessageHeader bodyLen",bodyLen)
+    hpHttpClient.reallocString(bodyLen)
+}
+
+http.onWsMessageBody = function(hpHttpClient,connId,pData,len){
+    ..io.print("onWsMessageBody len",len)
+    hpHttpClient.appendString(pData,len)
+
+}
+
+http.onWsMessageComplete = function(hpHttpClient,connId){
+    var s = hpHttpClient.getString()
+    io.print( "接收原始信息", s )
+    // 服务器应答
+    if( s == "PING :tmi.twitch.tv" ){
+        io.print("服务器 PING")
+        hpHttpClient.sendWsMessage("PONG")  
+        hpHttpClient.sendWsMessage("PING") 
+    }
+    elseif( s == "PONG :tmi.twitch.tv" ){
+    	io.print("服务器 PONG")
+    }
+    
+    var pNick = "display\-name\=(.+?)\;"
+    var pMsg = "PRIVMSG \#<@" ++ external.ownerName() + "@>\s+\:(.+?)$" 
+    
+    var nick = string.match( s, pNick )
+    var msg = string.match( s, pMsg )
+    if( nick ? msg ){
+        io.print( "【" ++ nick ++ "】:" ++ msg )
+    }
+   
+}
+
+/**
+/************************************************************************
+名称：Socket 操作类型
+描述：应用程序的 OnClose() 事件中通过该参数标识是哪种操作导致的错误
+************************************************************************/
+typedef enum EnSocketOperation
+{
+	SO_UNKNOWN	= 0,	// Unknown
+	SO_ACCEPT	= 1,	// Acccept
+	SO_CONNECT	= 2,	// Connect
+	SO_SEND		= 3,	// Send
+	SO_RECEIVE	= 4,	// Receive
+	SO_CLOSE	= 5,	// Close
+} En_HP_SocketOperation;
+
+**/
+http.onClose = function(hpHttpClient,connId,enOperation,errCode){
+    io.print( "onClose",enOperation,errCode ) 
+    hpHttpClient.reallocString(0)
+    if( errCode == 10053 ){
+    	io.print( "onClose", "代理服务器异常关闭" ) 
+    }
+}
+
+io.print("正在连接代理服务器...")
+
+http.setHttpAutoStart(false)
+
+// 1 连接代理服务器 
+if( http.start("127.0.0.1",1080,false) ){
+	io.print("连接代理服务器成功")
+	
+	// 2 发送请求来协议版本及认证方式
+	var t = {
+		BYTE ver = 5;
+		BYTE nmethods = 1;
+		BYTE methods = 0;
+	}
+	
+	http.send(t )		
+}
+io.print( http.getLocalAddress() )
+
+while( sleep(30 * 1000) )
+    http.sendWsMessage("PING")

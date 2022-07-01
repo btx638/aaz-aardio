@@ -1,0 +1,176 @@
+import win.ui;
+/*DSG{{*/
+var winform = win.form(text="aardio form";right=759;bottom=469)
+winform.add()
+/*}}*/
+
+io.open()
+
+socks5Helper = {
+   buildReqDataForIp = function(ip, port){
+		return {
+			BYTE ver = 0x5/*SOCKS版本*/;
+			BYTE cmd = 0x1/*CONNECT请求*/;
+			BYTE rsv = 0x0/*保留*/;
+			BYTE atyp = 0x1/*IPv4地址*/;
+			struct dst = {
+				BYTE ip[4] = ip;
+				WORD port = raw.swap( port, "WORD" );
+			}	
+		}
+   } 
+   buildReqDataForIpv6 = function(ip, port){
+		return {
+			BYTE ver = 0x5/*SOCKS版本*/;
+			BYTE cmd = 0x1/*CONNECT请求*/;
+			BYTE rsv = 0x0/*保留*/;
+			BYTE atyp = 0x4/*IPv6地址*/;
+			struct dst = {
+				BYTE ip[16] = ip;
+				WORD port = raw.swap( port, "WORD" );
+			}	
+		}
+   }
+   buildReqDataForDomainName = function( domainName, port = 443 ){
+		return owner.reqData( domainName, port )	
+   } 
+   buildAuthData = function(user, pwd){
+   		return owner.auth(user, pwd) 
+   } 
+   reqData = class{
+   		ctor( domainName, port ){}
+		BYTE ver = 0x5/*SOCKS版本*/;
+		BYTE cmd = 0x1/*CONNECT请求*/;
+		BYTE rsv = 0x0/*保留*/;
+		BYTE atyp = 0x3/*域名*/;
+		struct dst = {
+			struct addr = {
+				BYTE hostLen = #domainName;
+				BYTE host[] = domainName;
+			}
+			WORD port = ..raw.swap( port, "WORD" );
+		}
+   }
+    
+   auth = class{
+   		ctor(user, pwd){
+   			this.userLen = #user
+   			this.user = user
+   			this.pwdLen = #pwd
+   			this.pwd = pwd
+   		}
+   		BYTE ver = 0x5;
+   		BYTE userLen;
+   		BYTE user[];
+   		BYTE pwdLen;
+   		BYTE pwd[];
+   }    
+}
+
+import aaz.hpsocket.ssl.httpClient
+
+var http = aaz.hpsocket.ssl.httpClient()
+// 初始化通信组件 SSL 环境
+http.setupSSLContext(0/*SSL_VERIFY_NONE*/)
+// 取消 http 自动启动
+http.isHttpAutoStart = false
+
+
+http.threadGlobal = {
+	socks5Helper = socks5Helper;
+}
+
+http.onConnect = function(hpHttpClient,connId){
+    io.print("【onConnect】")
+}
+
+// 和代理服务器通讯都发生在这里
+http.onReceive = function(hpHttpClient,connId,pData,length){
+	io.print("【onReceive】")
+	if( length == 2  ){ ..io.print("1")
+		if( raw.convert( pData, {BYTE ver;BYTE method}).ver == 5  ){
+			var t = socks5Helper.buildReqDataForDomainName("www.youtube.com")
+			hpHttpClient.send( t )		
+		}	
+	}
+	elseif( raw.convert( pData, {BYTE ver;BYTE rep}).rep == 0x0/*表示成功*/ ) {
+		..io.print("2")
+		// 如果 socks5 需要用户名密码认证就发送认证请求，并等待服务器回复
+		// 启动 http 通讯
+		hpHttpClient.startHttp() 
+	}	
+}
+
+http.onHandShake = function( hpHttpClient, connId ){
+    io.print("【onHandShake】")
+	var header = {
+  		Host = "www.youtube.com";
+  		Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+  		["accept-language"] = "zh-CN,zh;q=0.9,ja;q=0.8,zh-TW;q=0.7";
+  		["Accept-Encoding"] = "gzip, deflate, br";
+    	["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36";
+	}
+	hpHttpClient.sendGet( , header)
+		
+}
+
+http.onHeader = function(hpHttpClient,connId,name,value){
+    io.print("【onHeader】")
+	//..io.print(  tonumber(hpHttpClient.contentLength >> 32) & 0xFFFFFFFF  )
+}
+
+/**基本事件**/
+http.onHeadersComplete = function(hpHttpClient,connId){	
+    io.print("【onHeadersComplete】")
+	hpHttpClient.reallocString(1 )	
+	..io.print(  tonumber(hpHttpClient.contentLength >> 32) >> 16  )
+	return 0;	
+}
+
+
+/**基本事件**/
+http.onBody = function(hpHttpClient,connId,pData,len){
+    io.print("【onBody】")
+	hpHttpClient.appendString(pData, len )
+	return 0; 
+}
+
+/**基本事件**/
+http.onMessageComplete = function(hpHttpClient,connId){
+    io.print("【onMessageComplete】")
+    var html = hpHttpClient.getString()
+
+    io.print(#html)
+	
+	var ok, cookie = hpHttpClient.getAllCookies()
+
+	hpHttpClient.reallocString( 0 )
+	return 0;
+}
+
+/**基本事件**/
+http.onParseError = function(hpHttpClient,connId,errorCode,errorDesc){
+     io.print("【onParseError】")
+}
+
+http.onClose = function(hpHttpClient,connId,enOperation,errCode){
+    io.print("【onClose】")
+	 hpHttpClient.reallocString( 0 )	
+}
+
+
+
+// 连接socks5代理
+if( http.start( "127.0.0.1", 10082,false ) ){
+	var t = {
+		BYTE ver = 0x5/*SOCKS版本*/;
+		BYTE nmethods = 1/*METHODS部分的长度*/;
+		BYTE methods = 0x0/*不需要认证*/;
+	}
+	
+	http.send(t)	
+}
+
+
+winform.show() 
+win.loopMessage();

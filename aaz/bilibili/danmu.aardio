@@ -1,13 +1,13 @@
 ﻿import aaz.libhpsocket.app.ssl.websocket.client;
 import aaz.bilibili.handler;
-import aaz.bilibili.userData;
+import aaz.bilibili.extra;
 import aaz.bilibili.util;
 import aaz.bilibili.packet;
 
 namespace aaz.bilibili;
 class danmu{
 	ctor(){
-		this = ..aaz.libhpsocket.app.ssl.websocket.client("aaz.bilibili.handler", "aaz.bilibili.userData");
+		this = ..aaz.libhpsocket.app.ssl.websocket.client("aaz.bilibili.handler", "aaz.bilibili.extra");
 	};
 	connect = function(roomId){
 		var hostList, token = ..aaz.bilibili.util.getInfo(roomId);
@@ -17,8 +17,8 @@ class danmu{
 		
 		this.roomId = roomId;
 		
-		// 定义组件的 userData
-		this.userData = ..aaz.bilibili.userData(roomId, token, "/sub", "https://live.bilibili.com")
+		// 定义组件的 extra
+		this.extra = ..aaz.bilibili.extra(roomId, token, "/sub", "https://live.bilibili.com")
 		return this.start(hostList[1].host, hostList[1].wss_port);
 	};
 	// 定义重连函数

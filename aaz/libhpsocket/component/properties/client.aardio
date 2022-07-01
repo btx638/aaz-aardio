@@ -59,7 +59,7 @@ pauseReceive = function(pause){
 	return _dll.HP_Client_PauseReceiveB(owner.pClient, pause); 	
 }
 
-wait = function(milliseconds){
+wait = function(milliseconds=-1){
 	return _dll.HP_Client_WaitB(owner.pClient, milliseconds); 
 }
 

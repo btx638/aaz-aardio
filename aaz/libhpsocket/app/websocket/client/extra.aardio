@@ -1,0 +1,17 @@
+﻿import aaz.libhpsocket.app.extra;
+import aaz.libhpsocket.app.extra.str;
+
+namespace aaz.libhpsocket.app.websocket.client;
+class extra{
+	ctor(wsPath, wsOrigin){
+		this = ..aaz.libhpsocket.app.extra();
+	}
+	free = function(){
+		this.wsKey.value = null;
+		this.wsPath.value = null;
+		this.wsOrigin.value = null;	
+	}
+	struct wsKey = ..aaz.libhpsocket.app.extra.str();
+	struct wsPath = ..aaz.libhpsocket.app.extra.str(wsPath);
+	struct wsOrigin = ..aaz.libhpsocket.app.extra.str(wsOrigin);
+}

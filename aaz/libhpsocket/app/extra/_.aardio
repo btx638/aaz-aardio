@@ -1,0 +1,60 @@
+﻿import util.metaProperty;
+
+namespace aaz.libhpsocket.app;
+class extra{
+	ctor(){
+		this@ = _metaProperty;
+		// 子类的free方法会自动加入此列表
+		this.freeList = {};
+	};
+	free = function(){
+		this.data.value = null;	
+	};
+	// 存放原始的传输数据
+	struct data = ..aaz.libhpsocket.app.extra.data();
+}
+namespace extra{
+    _metaProperty = ..util.metaProperty(
+    	_topointer = function(){
+    		return owner.pointer; 
+    	};
+		update = function(){
+			if(!owner.pointer){
+				error("未绑定指针 ",2)
+			}
+			..raw.convert(owner, owner.pointer); 
+		};
+		free = {
+			_set = function(v){
+				..table.push(owner.freeList, v)
+			}
+		}
+		value = {
+			_get = function(){
+				if(!owner.pointer){
+					owner.pointer = ..raw.realloc(..raw.sizeof(owner), null, owner); 
+					owner.data.new()
+					owner.update()
+				}
+				return owner.pointer; 
+			}
+			_set = function(v){
+				if(v === null){
+					if(!owner.pointer){
+						error("请先设置 pointer 再赋值为 null",2)	
+					}
+					// 释放各子类的数据
+					for(i=1;#owner.freeList;1){
+						owner.freeList[i]();
+					}
+					owner.pointer = ..raw.realloc(0, owner.pointer);
+					return ; 	
+				}
+				..raw.convert(v, owner);
+				owner.pointer = v; 
+			}
+		}
+    )	
+}
+
+import aaz.libhpsocket.app.extra.data;

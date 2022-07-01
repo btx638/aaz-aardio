@@ -24,7 +24,6 @@ class client{
 			this._clearKeepConnectTimerId();
 			
 			this.component.destroy();
-			this.component.wait();
 			this.listener.destroy();
 				
 			this.component = null;
@@ -46,7 +45,7 @@ class client{
 	};
 	_clearUserData = function(){
  		if(this["(userData)"]){
-			this["(userData)"].freeExtra()
+			this["(userData)"].value = null;
 			this.component.extra = null
 			this["(userData)"] = null
  		}	
@@ -94,17 +93,17 @@ class client{
 }
 namespace client{
     _metaProperty = ..util.metaProperty(
-    	userData = {
+    	extra = {
     		_get = function(){ 
     		    return owner["(userData)"]; 
     		}
     		_set = function( value ){
-    		    // 如果断开连接时在监听函数内部已释放，不要重复释放，否则程序会崩溃
+    		    // 断开连接时在监听函数内部已释放，不要重复释放，否则程序会崩溃
     		    if(value === null){
 					owner._clearUserData()
 					return ; 
     		    }
-    		    owner.component.extra = value.buildExtra(); 
+    		    owner.component.extra = value.value; 
     		    owner["(userData)"] = value
     		} 	
     	};

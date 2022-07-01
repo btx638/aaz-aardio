@@ -1,6 +1,6 @@
 ﻿import util.metaProperty;
 
-namespace aaz.libhpsocket.app.userData;
+namespace aaz.libhpsocket.app.extra;
 class str{
 	ctor(s){
 		this@ = _metaProperty;
