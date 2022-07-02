@@ -1,0 +1,214 @@
+﻿import crypt.bin;
+import aaz.chrome.dp;
+
+namespace aaz.chrome;
+class bot{
+	ctor(){
+		var cdp = ..aaz.chrome.dp();
+		..table.gc(this, "close")
+		
+		
+	};
+	close = function(){
+		if(cdp){
+			cdp.close()
+			cdp = null
+		}	
+	};
+	run = function(task, onBegin, onEnd, ...){
+		cdp.run(task, onBegin, onEnd, ...); 
+	};
+	init = function(){
+		var ok, err = cdp.Page.enable();
+    	if(!ok){
+    		return false, "订阅 Page 事件失败" ++ err; 
+    	}
+		
+		// Controls whether to discover available targets and notify via targetCreated/targetInfoChanged/targetDestroyed events.
+		var ok, err = cdp.Target.setDiscoverTargets(discover=true);
+    	if(!ok){
+    		return false, "订阅 Page 事件失败" ++ err; 
+    	}
+    	return true;
+	}
+	
+	launch = function(chromePath, headless=true, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
+		var ok, err = cdp.open(chromePath, headless, userDataDir, port, disableGpu);
+    	if(!ok){
+    		return false, err; 
+    	}
+
+    	var ok, err = cdp.connect();
+    	if(!ok){
+    		return false, err; 
+    	}
+    	
+
+    	return true; 
+	};	
+	go = function(url){
+		// 打开网址
+		var ok, err = cdp.Page.navigate(
+			url = url;
+		)
+    	if(!ok){
+    		return false, "打开网址失败" ++ err; 
+    	}
+    	return true; 
+	};
+	wait = function(){
+		// 等待页面加载完成
+		var ok, err = cdp.waitEvent( "Page.loadEventFired" );
+    	if(!ok){
+    		return false, "等待页面加载完成失败" ++ err; 
+    	}
+	};
+	getDoc = function(){
+		// 获取 document 节点
+		var document, err = cdp.DOM.getDocument()
+    	if(!document){
+    		return false, "获取 document 节失败"; 
+    	}
+    	return document; 	
+	};
+	querySelector = function(selector){
+		var document, err = this.getDoc();
+		if(!document ){
+			return false, err; 
+		}
+		var dom, err = cdp.DOM.querySelector(
+			nodeId = document.root.nodeId;
+			selector = selector;
+		);
+    	if(!dom){
+    		return false, "获取 dom 失败"; 
+    	}
+    	if(dom.nodeId == 0){
+    		return null; 
+    	}
+    	return ..aaz.chrome.bot.element(cdp, dom.nodeId); 
+	};
+	querySelectorAll = function(selector){
+		var document, err = this.getDoc();
+		if(!document ){
+			return null, err; 
+		}
+		var doms, err = cdp.DOM.querySelectorAll(
+			nodeId = document.root.nodeId;
+			selector = selector;
+		);
+    	if(!doms){
+    		return false, "获取 dom 失败"; 
+    	}
+    	if(#doms.nodeIds == 0){
+    		return null; 
+    	}
+    	return {
+    	    @{
+    	        _get = function(n){
+    	        	if(type(n)==type.number){
+    	        	    if(doms.nodeIds[n]){
+    	        	    	return ..aaz.chrome.bot.element(cdp, doms.nodeIds[n]); 
+    	        	    }
+    	        	}
+    	        	elseif(n == "length"){
+    	        		return #doms.nodeIds; 
+    	        	}	
+    	        }
+    	    }
+    	};
+	};
+	getEle = function(id){
+		return this.querySelector("#"++id); 
+	};
+	click = function(selector){
+		var ret = cdp.DOM.querySelector(
+			selector = selector;
+			nodeId = cdp.DOM.document().root.nodeId;
+		)
+	};
+	foucs = function(selector){
+		
+	};
+	runscript = function(script){
+		var ret, err = cdp.Runtime.compileScript(
+			sourceURL = url;
+			persistScript = true;
+			expression = script;
+		)
+	
+		if(!ret){
+    		return false, err; 
+		}
+		// 检查编译的结果
+		_checkErr(ret.exceptionDetails);
+		
+		var ret, err = cdp.Runtime.runScript(
+			scriptId = 	ret.scriptId;
+			returnByValue = true;
+		)
+		if(!ret){
+			return false, err; 
+		}
+		_checkErr(ret.exceptionDetails);
+		
+		return ret.value; 
+	};
+	eval = function(expression){
+		var ret, err = cdp.Runtime.evaluate(
+			expression = expression;
+			returnByValue = true;
+		);
+		if(!ret){
+			return false, err; 
+		}
+		_checkErr(ret.exceptionDetails);
+		return ret.result.value; 
+	};
+	screenshot = function(path, format="jpeg", quality=100, clip){
+		var ret, err = cdp.Page.captureScreenshot(
+			format = format;
+			quality = quality;
+			clip = clip;
+		);
+		if(!ret){
+			return null, err; 
+		}
+		var data = ..crypt.bin.decodeBase64(ret.data);
+		
+		var path = ..io.fullpath(path)
+		if(path){
+			..string.save(path, data)
+		}
+		return data; 
+	}
+		
+}
+namespace bot{
+    namespace ..global{
+        import aaz.chrome.bot.element;
+    }
+    _checkErr = function(exceptionDetails){
+        if(exceptionDetails){
+    		error( 
+    			'\r\n' ++
+    			"行号：" ++ exceptionDetails.lineNumber ++ '\r\n' ++
+        		"列号：" ++ exceptionDetails.columnNumber ++ '\r\n' ++
+        		"内容：" ++ exceptionDetails.exception.description,
+        		2
+        	); 
+        }
+    }
+    
+    screenshot = function(url, selector, path){
+		var bot = ..aaz.chrome.bot();
+		bot.run(function(){
+			bot.launch()
+			bot.go("https://htmlayout.cn/")
+			bot.screenshot(path)
+			bot.close()
+		});
+    }   	
+}
+
+

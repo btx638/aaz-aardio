@@ -16,23 +16,29 @@ if(!cdp){
 	return ; 
 }
 
-var js = /**
-	const sleep = (ms) => {
+// 定义 js 等待函数
+var waitJs = /**
+	const userWait = (ms) => {
   		return new Promise(resolve => setTimeout(resolve, ms))
 	}
 	
 	async function sleepAsync(ms) {
-  		await sleep(ms)
+  		await userWait(ms)
 	}
-	
-	sleepAsync(%s)
 **/
 
+// 向网页载入 js 代码
+var loadJsCode = function(js){
+	return cdp.Runtime.evaluate(
+		expression = js;
+	)	
+}
 
+// 等待函数
 var wait = function(ms){
 	return cdp.Runtime.evaluate(
 		awaitPromise = true; // 执行是否应该等待结果值，并在等待的承诺被解决后返回。
-		expression = string.format(js, ms)
+		expression = string.format("sleepAsync(%s)", ms)
 	)
 }
 
@@ -64,12 +70,15 @@ var task = function(){
 
 	// 等待页面加载完成
 	cdp.waitEvent( "Page.loadEventFired" );
+	
+	// 加载用于等待 js 代码
+	loadJsCode(defineJs)
 
 	io.print("等待开始")
 	var tick = time.tick()
 	wait(5000)
 	io.print("等待结束，用时：",  time.tick()-tick )
-	
+
 	// 关闭浏览器
 	cdp.Browser.close(); 
 }

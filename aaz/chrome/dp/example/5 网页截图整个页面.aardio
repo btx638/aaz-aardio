@@ -4,7 +4,8 @@ var winform = win.form(text="aardio form";right=623;bottom=103)
 winform.add(
 btnScreenshot={cls="button";text="截图";left=440;top=16;right=576;bottom=48;z=3};
 edUrl={cls="edit";text="https://www.taobao.com/";left=72;top=16;right=424;bottom=48;edge=1;z=2};
-static={cls="static";text="网址：";left=24;top=16;right=72;bottom=48;transparent=1;z=1}
+static={cls="static";text="网址：";left=24;top=16;right=72;bottom=48;transparent=1;z=1};
+static2={cls="static";text="日志：";left=80;top=72;right=288;bottom=88;transparent=1;z=4}
 )
 /*}}*/
 
@@ -19,45 +20,87 @@ import process
 import aaz.chrome.dp;
 
 var cdp, err = aaz.chrome.dp()
+// 定义 js 等待函数
+var waitJs = /**
+	const userWait = (ms) => {
+  		return new Promise(resolve => setTimeout(resolve, ms))
+	}
+	
+	async function sleepAsync(ms) {
+  		await userWait(ms)
+	}
+**/
 
+// 向网页载入 js 代码
+var loadJsCode = function(js){
+	return cdp.Runtime.evaluate(
+		expression = js;
+	)	
+}
+
+// 等待函数
+var wait = function(ms){
+	return cdp.Runtime.evaluate(
+		awaitPromise = true; // 执行是否应该等待结果值，并在等待的承诺被解决后返回。
+		expression = string.format("sleepAsync(%s)", ms)
+	)
+}
+
+io.open()
 var task = function(url){
 	// 以无头模式启动，就是不显示浏览器的界面
 	cdp.open(,true)
     cdp.connect();
+    // 订阅 Page 事件，可用于等待页面加载完成
 	cdp.Page.enable();
+	// 打开网址
 	cdp.Page.navigate(
 		url = url;
 	)
+	// 等待页面加载完成
 	cdp.waitEvent( "Page.loadEventFired" );
 	
-	// 滚动页面
+	// 载入等待js函数
+	loadJsCode(waitJs)
 	
-  	var totalHeight = 0;
+	// 已滚动的总高度
+  	var scrolledDistance = 0;
   	// 每次滚动高度
   	var distance = 100;
   	
   	while(true){
+  		// 滚动一次
 		cdp.Runtime.evaluate(
 			expression = string.format(" window.scrollBy(0, %s);", distance);
 		)
-		totalHeight += distance;
+		// 记录已滚动的高度
+		scrolledDistance += distance;
 		
+		// 滚动条的实际高度
 		var ret = cdp.Runtime.evaluate(
 			expression = "document.body.scrollHeight";
 			returnByValue = true;
 		)
 		
-        if (totalHeight >= ret.result.value) {
+        // 定义一个回调函数，用于输出日志
+        if(onSroll){
+        	onSroll(scrolledDistance, ret.result.value)
+        }
+		
+		// 滚动到底了
+        if (scrolledDistance >= ret.result.value) {
           break;
         }
-        win.delay(100)
+
+        // 等待100毫秒，让网页加载新的内容，如果网络慢可以加大等待时间
+        wait(100)
+        
   	}
   	
-	
 
-		
 	var rect = cdp.Page.getLayoutMetrics()
 	
+	// 截图
 	var ret = cdp.Page.captureScreenshot(
 		format="jpeg";
 		captureBeyondViewport = true;
@@ -75,9 +118,15 @@ var task = function(url){
 	// 关闭浏览器
 	cdp.Browser.close(); 
 	if(ret){
+		// 输出解码后的图像数据
 		return crypt.bin.decodeBase64(ret.data); 	
 	}
 }
+
+onSroll = function(scrolledDistance, mian){
+	winform.static2.text = "已滚动距离：" ++ scrolledDistance ++ " 总高度：" ++ mian
+}
+
 
 winform.btnScreenshot.oncommand = function(id,event){
 	var url = winform.edUrl.text
@@ -86,11 +135,14 @@ winform.btnScreenshot.oncommand = function(id,event){
 		return ; 
 	}
 	
+	// 执行任务函数
 	cdp.run(
 		task,
+		// 执行前触发
 		function(){
 			winform.btnScreenshot.disabled = true
 		},
+		// 执行完毕触发，并收到执行函数的返回值
 		function(data){
 			winform.btnScreenshot.disabled = false
 			if(data){

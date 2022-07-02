@@ -1,0 +1,69 @@
+﻿import util.metaProperty;
+
+namespace aaz.chrome.bot;
+class element{
+	ctor(cdp, nodeId){
+		this.cdp = cdp;
+		this.nodeId = nodeId;
+	};
+	attributes = function(key){
+		var ret, err = cdp.DOM.getAttributes(
+			nodeId = this.nodeId;
+		);
+		if(!ret){
+			return false, "读取节点属性集合失败"; 
+		}
+		var m = {}
+		for(j=1;#ret.attributes;2){
+			var k = ret.attributes[j];
+			var v = ret.attributes[j+1];
+			m[k] = v;
+		}
+
+		if(key){
+			return m[key]; 	
+		}
+		else {
+			return m;
+		}
+	};
+/*
+	getBoundingClientRect = function(){
+		cdp.Runtime.evaluate
+	}
+*/
+	
+	setAttribute = function(name, value){
+		return cdp.DOM.setAttributeValue(
+			nodeId = this.nodeId;
+			name = name;
+			value = value;
+		);	
+	};
+	focus = function(){
+		return cdp.DOM.focus(
+			nodeId = this.nodeId;
+		);
+	};
+	click = function(){
+		
+	};
+	@_metaProperty;	
+}
+namespace element{
+    _metaProperty = ..util.metaProperty(
+    	value = {
+    		_get = function(){ 
+    			/*读取属性代码写在这里*/
+    			return null;
+    		}
+    		_set = function( value ){
+    			/*写入属性代码写在这里*/
+    			..io.print( owner,value)
+    		} 	
+    	};
+    );
+    
+	
+}
+

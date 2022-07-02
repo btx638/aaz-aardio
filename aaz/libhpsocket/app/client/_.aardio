@@ -1,21 +1,19 @@
-﻿import util.metaProperty;
-import aaz.libhpsocket.app.base;
+﻿import aaz.libhpsocket.app.base;
 
 namespace aaz.libhpsocket.app;
 class client{
-	ctor(listener, component, handlerPath, userDataPath){
-		this = ..aaz.libhpsocket.app.base(listener, handlerPath, userDataPath)
-		this.listener = listener;
-		this.component = component;
-		
-		this["(userData)"] = null
-		
+	ctor(obj){
+		this = ..aaz.libhpsocket.app.base(obj)
+
 		this.on("onClose", function(){
+			// 停止定时任务
 			this._clearIntervalTaskTimerId();
 			if(this.onDisconnect){
 				this.onDisconnect();
 			}
 		})
+		
+
 	};
 	// 必须手动关闭，不要放在自动析构里面
 	close = function(){
@@ -30,10 +28,16 @@ class client{
 			this.listener = null;
 		}
 	};
-	start = function(ip, port){
-		if(!component.start(ip, port, false)){
-			this._clearUserData();
-			return false; 
+	start = function(ip, port, proxy){
+		if(this.extra){
+			this.component.extra = this.extra.value;
+		}
+		if(!this.component.start(ip, port, false)){
+			if(this.extra){
+				this.extra.value = null;
+				this.component.extra = null
+				return false; 
+			}
 		}
 		this.ip = ip;
 		this.port = port;
@@ -41,71 +45,8 @@ class client{
 		return true; 
 	};
 	isDisconnect = function(){
-		return component.state == 3; 
+		return this.component.state == 3; 
 	};
-	_clearUserData = function(){
- 		if(this["(userData)"]){
-			this["(userData)"].value = null;
-			this.component.extra = null
-			this["(userData)"] = null
- 		}	
-	};
-	keepConnect = function(interval=5000){
-		this._clearKeepConnectTimerId()
-		
-		this.keepConnectTimerId = this._form.setInterval( 
-			function(){
-				if( this.isDisconnect() ){
-
-					if(this._reconnect){
-						this._reconnect()
-					}
-				}
-			},interval 
-		)
-	};
-	startIntervalTask = function(interval=10000){
-		this._clearIntervalTaskTimerId();
-		
-		this.intervalTaskTimerId = this._form.setInterval( 
-			function(){
-				if(this.listener){
-					if(this._intervalTask){
-						this._intervalTask();
-					}
-				}
-			},interval 
-		)
-	};
-	_clearIntervalTaskTimerId = function(){
-		if(this.intervalTaskTimerId){
-			this._form.clearInterval(this.intervalTaskTimerId)
-			this.intervalTaskTimerId = null
-		}
-	};
-	_clearKeepConnectTimerId = function(){
-		if(this.keepConnectTimerId){
-			this._form.clearInterval(this.keepConnectTimerId)
-			this.keepConnectTimerId = null
-		}
-	};	
-	@_metaProperty;
 }
-namespace client{
-    _metaProperty = ..util.metaProperty(
-    	extra = {
-    		_get = function(){ 
-    		    return owner["(userData)"]; 
-    		}
-    		_set = function( value ){
-    		    // 断开连接时在监听函数内部已释放，不要重复释放，否则程序会崩溃
-    		    if(value === null){
-					owner._clearUserData()
-					return ; 
-    		    }
-    		    owner.component.extra = value.value; 
-    		    owner["(userData)"] = value
-    		} 	
-    	};
-    )      	
+namespace client{    	
 }

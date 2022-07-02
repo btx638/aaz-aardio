@@ -17,7 +17,7 @@ class dp{
 		var async = ..aaz.async();
 
 		var requestId = 0;
-		var chromePid;
+		var chromeMainPid;
 		var methodsOfListen = {};
 				
 		var doMsg = function(msg){
@@ -48,7 +48,7 @@ class dp{
 				
 				// 浏览器关闭
 				if(t.method == "Inspector.detached"){
-					chromePid = null;
+					chromeMainPid = null;
 				}
 			}	
 		}
@@ -70,7 +70,7 @@ class dp{
 		}
 	};
 	close = function(){
-		this.killChrome();
+		this.closeChrome();
 		async.close();
 		ws.close();
 	};
@@ -80,19 +80,18 @@ class dp{
 	run = function(func, onStart, onComplete, ...){
 		return async.run(func, onStart, onComplete, ...); 
 	};
-	killChrome = function(){
-		if(chromePid){
-			try{
-				..process.kill(chromePid);
-			}
-			chromePid = null;
+	closeChrome = function(){
+		if(chromeMainPid){
+			this.run(
+				function() {this.Browser.close()}
+			)
 		}
 	};
 	waitEvent = function(name){
 		return async.await(name); 
 	};	
 	open = function(chromePath, headless=false, userDataDir="\chrome.remote.userdata", port, disableGpu=true){
-		this.killChrome();
+		this.closeChrome();
 		if(chromePath){
 			if(!..io.exist(chromePath)){
 				error(chromePath ++ " 文件不存在",2);
@@ -130,7 +129,7 @@ class dp{
 			return null, "启动 chrome 失败，原因：" ++ err; 
 		}
 		
-		chromePid = pid;
+		chromeMainPid = pid;
 		this.chromeHost = "localhost";
 		this.chromePort = port;
 		return true; 

@@ -15,8 +15,11 @@ if(!cdp){
     winform.msgboxErr(err);
 	return ; 
 }
+
+// 指定每个步骤的超时， 这里是2万毫秒，就是20秒
 cdp.timeout = 20000;
 
+// 定义任务函数
 var task = function(){
  	// 打开浏览器
 	var ok, err = cdp.open()
@@ -56,16 +59,17 @@ var task = function(){
     }
 
 
-	// 执行代码
+	// 执行 js 脚本
 	var ok, err = cdp.Runtime.evaluate(
 		expression = /**
-       document.querySelector("#input").value = "aardio";
+       document.querySelector("#input").value = "52pojie";
        document.querySelector("#search-button").click();
 		**/
 	)
 
 }
 
+// 点击运行任务函数
 winform.button.oncommand = function(id,event){
 	cdp.run(task)
 }

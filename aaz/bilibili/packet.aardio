@@ -80,11 +80,11 @@ unpack = function(pData, offset, proc){
 				// 数据长度，解压出来的数据可能包含了不止1条完整的消息
 				var len = ..raw.sizeof(ptr); 
 				// 指针的偏移
-				var os = 0;
-				while(os < len){
+				var o = 0;
+				while(o < len){
 					// 本次解压消耗的长度
-					var pkLen = unpack(ptr, os, proc)
-					os += pkLen;
+					var pkLen = unpack(ptr, o, proc)
+					o += pkLen;
 				}
 				..raw.realloc(0, ptr)
 			} 

@@ -2,46 +2,46 @@
 
 namespace aaz.libhpsocket.app.websocket.client;
 class base{
-	ctor(listener, component, handlerPath, userDataPath){
-		this = ..aaz.libhpsocket.app.client(listener, component, handlerPath, userDataPath)
-		
-		listener.onHandShake = function(component, connId){
+	ctor(obj){
+		this = ..aaz.libhpsocket.app.client(obj)	
+	
+		this.listener.onHandShake = function(component, connId){
 			return __handler__.onHandShake(component);
 		}
 				
-		listener.onHeader = function(component, connId, name, value){
+		this.listener.onHeader = function(component, connId, name, value){
     	
 		}
-		
-		listener.onHeadersComplete = function(component, connId){	
+	
+		this.listener.onHeadersComplete = function(component, connId){	
     	
 		}
 
-		listener.onUpgrade = function(component, connId, upgradeType){
+		this.listener.onUpgrade = function(component, connId, upgradeType){
 			return __handler__.onUpgrade(component, upgradeType);	
 		}
 		
-		listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
+		this.listener.onWsMessageHeader = function(component, connId, final, reserved, opCode, mask, bodyLen){
 			return __handler__.onWsMessageHeader(component, final, reserved, opCode, mask, bodyLen);
 		}
 		
-		listener.onWsMessageBody = function(component, connId, pData, len){
+		this.listener.onWsMessageBody = function(component, connId, pData, len){
 			return __handler__.onWsMessageBody(component, pData, len);	
 		}
 		
-		listener.onWsMessageComplete = function(component, connId){
+		this.listener.onWsMessageComplete = function(component, connId){
 			return __handler__.onWsMessageComplete(component);
 		}
 		
-		listener.onClose = function(component, connId, enOperation, errCode){
+		this.listener.onClose = function(component, connId, enOperation, errCode){
 			return __handler__.onClose(component, connId, enOperation, errCode);
 		}
 	};
 	send = function(data, ...){
-		return component.sendWsMessage(data, ...);	
+		return this.component.sendWsMessage(data, ...);	
 	};
 	stop = function(){
-		return component.stop(); 
+		return this.component.stop(); 
 	}
 		
 }

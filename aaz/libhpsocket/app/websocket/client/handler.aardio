@@ -40,38 +40,6 @@ var checkWsUpgradeResponse = function(component){
 	return ..aaz.libhpsocket.helper.httpClient.checkWsUpgradeResponse2(component, wsKey);
 }
 
-parseFixedHeaderMsg = function(extra){	
-	//  剩余数据的长度
-	var unreadLen = ..raw.sizeof(extra.pData);
-	//  读取指针，始终指向数据的头部
-	var offset = 0;
-
-	while(true){	
-		// 标准消息长度	
-		var packetLen = owner.getPacketLen(extra.pData, offset)
-
-		// 不完整
-		if(unreadLen < packetLen){
-			extra.toUnread(offset, unreadLen);
-			return ; 
-		}
-
-		if(owner.onPacket){
-			owner.onPacket(topointer(extra.pData, offset), packetLen);
-		}
-		
-		// 偏移到下个数据
-		offset += packetLen;
-		
-		unreadLen -= packetLen;
-		// 读完了
-		if(unreadLen == 0){ 
-			extra.reset();
-			return ; 
-		}
-	}		
-}
-
 onHandShake = function(component){ 
 	return sendWsUpgradeRequest(component)
 }

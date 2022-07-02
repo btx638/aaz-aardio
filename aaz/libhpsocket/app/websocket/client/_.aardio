@@ -3,11 +3,14 @@ import aaz.libhpsocket.listener.httpClient;
 
 namespace aaz.libhpsocket.app.websocket;
 class client{
-	ctor(handlerPath, userDataPath){
-		var listener = ..aaz.libhpsocket.listener.httpClient(); 
-		var component = ..aaz.libhpsocket.component.httpClient(listener);
-
-		this = ..aaz.libhpsocket.app.websocket.client.base(listener, component, handlerPath, userDataPat)
+	ctor(handlerPath, extraPath){
+		this.listener = ..aaz.libhpsocket.listener.httpClient(); 
+		this.component = ..aaz.libhpsocket.component.httpClient(this.listener);
+		this.handlerPath = handlerPath;
+		this.extraPath = extraPath;
+		
+		// 装饰
+		..aaz.libhpsocket.app.websocket.client.base(this)
 	};
 }
 import aaz.libhpsocket.app.websocket.client.base;

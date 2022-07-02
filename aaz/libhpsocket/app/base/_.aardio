@@ -2,23 +2,24 @@
 
 namespace aaz.libhpsocket.app;
 class base{
-	ctor(listener, handlerPath, userExtraClassPath){
+	ctor(obj){
+		this = obj;
 		
-		listener.threadGlobal = {
-			handlerPath__ = handlerPath;
-			userExtraClassPath__ = userExtraClassPath;
+		this.listener.threadGlobal = {
+			handlerPath__ = this.handlerPath;
+			extraPath__ = this.extraPath;
 		}
 		
-		listener.onThreadCreated = function(sessionId){
-			// 处理器表
+		this.listener.onThreadCreated = function(sessionId){
+			// 处理器
 			global.import(handlerPath__);
 			__handler__ = eval(handlerPath__);
 			handlerPath__ = null;
 			
 			// 用户数据类
-			global.import(userExtraClassPath__);
-			__userExtraClass__ = eval(userExtraClassPath__);
-			userDataClassPath__ = null;
+			global.import(extraPath__);
+			__userExtraClass__ = eval(extraPath__);
+			extraPath__ = null;
 			
 			
 			// 转发到 UI 主线程
@@ -33,10 +34,54 @@ class base{
 			}
 		}
 		
-		var thCmd = ..thread.command()
-		this._form = thCmd._form
+		this._thCmd = ..thread.command();
+		this._form = this._thCmd._form;
+		
+		var keepConnectTimerId;
+		var intervalTaskTimerId;
+
 	};
 	on = function(name, func){
-		thCmd[name ++ listener._sessionId] = func;
+		this._thCmd[name ++ this.listener._sessionId] = func;
+	};
+	keepConnect = function(interval=5000){
+		if(!this._reconnect){
+			error("未定义 _reconnect 重连函数",2)
+		}
+		this._clearKeepConnectTimerId()
+		
+		keepConnectTimerId = this._form.setInterval( 
+			function(){
+				if( this.isDisconnect() ){
+					this._reconnect()
+				}
+			},interval 
+		)
+	};
+	startIntervalTask = function(interval=10000){
+		if(!this._intervalTask){
+			error("未定义 _intervalTask 定时任务函数",2)
+		}
+		this._clearIntervalTaskTimerId();
+		
+		intervalTaskTimerId = this._form.setInterval( 
+			function(){
+				if(this.listener){
+					this._intervalTask();
+				}
+			},interval 
+		)
+	};
+	_clearIntervalTaskTimerId = function(){
+		if(intervalTaskTimerId){
+			this._form.clearInterval(intervalTaskTimerId)
+			intervalTaskTimerId = null
+		}
+	};
+	_clearKeepConnectTimerId = function(){
+		if(keepConnectTimerId){
+			this._form.clearInterval(keepConnectTimerId)
+			keepConnectTimerId = null
+		}
 	};
 }
