@@ -1,0 +1,209 @@
+﻿//works 任务分派
+import win.guid;
+import thread.table;
+
+namespace aaz.thread;
+
+class works{
+	ctor( limit,func,waitTime,fInit,...){
+		this._guid = tostring(..win.guid.create());
+		this._thrdWorking = ..thread.var(this._guid + "$working",0) ;
+		this._thrdArguments = ..thread.table( this._guid + "$arguments",0); 
+		this._thrdResults = ..thread.table( this._guid + "$result",0);   
+		this._thrdSign = ..thread.var(this._guid + "$sign",true); 
+
+		var threads = {} 
+		for(i=1;limit;1){
+			var thrd = {}
+			thrd.handle,thrd.id = ..thread.create(
+				function(func,fInit,waitTime,thrdSign,thrdWorking,thrdArguments,thrdResults,...){ 
+					if(fInit) fInit(...);
+					while( thrdSign.get() ){ 
+						if( thrdArguments.len() > 0 ){
+							var arg = thrdArguments.remove() 
+							if(arg!==null){  
+								thrdWorking.add(1);
+								var ret = func(arg,...);
+								if(ret!==null) thrdResults.insert( ret ); 
+								thrdWorking.add(-1);
+							}
+						}
+						else {
+							sleep(waitTime);
+						} 
+					}  
+				},func,fInit,waitTime : 500 
+					,this._thrdSign,this._thrdWorking,this._thrdArguments,this._thrdResults
+					,...
+			)
+			..table.push(threads,thrd);
+		
+		} 
+		..table.gc(this,"quit");
+	}
+	
+	each = function(){
+		this.suspend()
+		return function(k){
+			return this._thrdArguments.next(k);
+		},function(){
+			this.resume();
+		} ;
+	}
+	
+	update = function(idx,args){
+		this._thrdArguments.set(idx,args);
+	}
+	
+	push = function(...){
+		if( #threads ) { 
+			this._thrdArguments.push(...);	 
+		}
+	}
+	
+	peek = function(n){ 
+		return this._thrdResults.len()
+	}
+	
+	pop = function(n){ 
+		if(this._thrdResults.len()){
+			return this._thrdResults.pop(n)	 
+		}
+	}
+	
+	getHandleById = function(id){
+		var handles ={}
+		for(slot,thrd in threads){
+			if( thrd.id = id) return thrd.handle; 
+		} 
+	}
+	
+	getHandles = function(){
+		var handles ={}
+		for(slot,thrd in threads){
+			..table.push( handles,thrd.handle ) //support push null   
+		} 
+		return handles;	
+	}
+	
+	suspend = function(id){
+		if( id ){ 
+			var handle = this.getHandleById(id) ;
+			return handle ? ..thread.suspend( handle )
+		}
+		
+		var handles = this.getHandles();
+		for(i,hdle in handles){ 
+			..thread.suspend(hdle)
+		} 
+	}
+	
+	resume = function(id){
+		if( id ){ 
+			var handle = this.getHandleById(id) ;
+			return handle ? ..thread.resume( handle )
+		}
+		
+		var handles = this.getHandles();
+		for(i,hdle in handles){ 
+			..thread.resume(hdle)
+		} 	
+	}
+	
+	clear = function(){
+		this._thrdArguments.clear();
+		
+		var delay = ..win[["ui"]] ?  ..win[["delay"]] : sleep
+		delay(100);  
+		while( this._thrdWorking.get() > 0 ) { 
+			delay( 100  )
+		} 
+		this._thrdWorking.set(0);
+		this._thrdResults.clear();
+	}
+	
+	quit = function(){ 
+		if( #threads ){ 
+			var delay = ..win[["ui"]] ?  ..win[["delay"]] : sleep
+			var handles = this.getHandles(); 
+			for(i=1;#handles){ 
+				..raw.closehandle(handles[i])
+			} 
+			threads = {};
+			this._thrdSign.set(null)
+ 
+			delay(100);  
+			while( this._thrdWorking.get() > 0 ) { 
+				delay( 100  )
+			} 
+			this._thrdWorking.set(0);
+			this._thrdArguments.clear();
+			this._thrdResults.clear();
+		}
+	}
+	
+	queueCount = function(){
+		return this._thrdArguments.len();
+	}
+	
+	busy = function(){
+		return ( this._thrdArguments.len() > 0 ||  this._thrdWorking.get()  )
+	}
+	
+	finished = function(){
+		return !this.busy() && !this._thrdResults.len()
+	}
+	
+	wait = function(f){ 
+		var r;
+		var delay = ..win[["ui"]] ?  ..win[["delay"]] : sleep;
+		while( this.busy() ) { 
+			if( ! delay( 100  ) ){
+				return;
+			}
+			if( f ){
+				r = this.pop(1);
+				if(r!==null)f(r);
+			}
+		}
+		
+		if(f){
+			r = this.pop(1);
+			while( (r!==null) && delay(10) ){
+				f(r);
+				r = this.pop(1);
+			} 
+		}
+		return true; 
+	}
+	
+	waitClose = function(f){
+		var r = this.wait(f);
+		this.quit();
+		return r;
+	} 
+}  
+
+
+/**intellisense(aaz.thread)
+works = 线程工作项管理
+works(线程数,工作函数,等待延时,初始化函数,->->->) = @.works( 20,\n	function(arguments,...) {\n		__/*arguments为线程任务传递的参数,\n其他参数为创建thread.work时的附加参数,\n这些附加参数也会传递给初始化函数*/\n		return "返回值"\n	} \n);
+works() = !thread_work.
+!thread_work.queueCount() = 排队等候执行的任务数目
+!thread_work.clear() = 清空已添加的任务
+!thread_work.push(__) = 添加调用实参到任务列表尾部\n可使用table对象传递多个参数给任务函数\n工作函数将自动获取参数并执行任务,\n此函数会等待空闲线程,等待时界面线程仍然可以处理窗口消息
+!thread_work.pop(__) = 弹出工作函数完成任务后的返回值，\n注意如果线程返回的是null将被忽略
+!thread_work.peek() = 是否有线程完成了新的任务并返回了新的值，\n注意如果线程返回的是null将被忽略
+!thread_work.quit() =  通知所有线程退出\n并等待线程关闭
+!thread_work.wait() =  等待所有任务完成,\n可指定一个回调函数作为参数接收工作项返回值\n\n建议在界面线程使用定时器替代此函数
+!thread_work.waitClose() =  等待所有任务完成\n通知所有线程退出,并等待所有线程关闭.\n可指定一个回调函数作为参数接收工作项返回值\n\n建议在界面线程使用定时器替代此函数
+!thread_work.busy() = 是否有未完成任务
+!thread_work.finished() = 是否有未完成任务或未读取的任务返回值
+!thread_work.suspend() = 所有线程暂停\n可选在参数中指定线程ID\n注意线程是否正在使用互斥锁
+!thread_work.resume() = 所有线程继续执行\n可选在参数中指定线程ID
+!thread_work.getHandleById(.(线程ID) = 使用线程ID返回线程句柄\n不可关闭该句柄
+!thread_work.update(.(索引,参数) = 更新任务参数\该函数只能在each循环内部使用
+!thread_work.each = @for( idx,args in ??.each() ){
+	__/*遍历所有待执行任务,\n该函数会暂停所有任务*/
+}
+end intellisense**/
