@@ -6,32 +6,13 @@ var valueObject = web.sciter.valueObject;
 var raw_convert = raw.convert;
 var table_unpack = table.unpack;
 
-/**
-值的传递原则：
-
-本机 -> 脚本   除非先把值复制一份再传递给脚本，否则禁止在本机自动析构， 让脚本自己析构
-脚本 -> 本机   在本机自动析构
-**/
-
-
-namespace web.sciter{
-	script = {
-		@{
-			_set = function(k,v){
-				if(type(k)=="string") ::Sciter.SetVariable(0, k, valueObjectLite(v)); //禁止自动析构
-				else error("字段名必须是字符串");
-			};
-		};	
-	}	
-}
-
 namespace web.sciter.event{
 	_defaultHandler[HANDLE_GROUPS.SCRIPTING_METHOD_CALL] = function(this,tag,he,prms){  
 		var xcallParams = raw_convert(prms, SCRIPTING_METHOD_PARAMS());
 		var handler = this[[ xcallParams.method_name ]];
 		// 找扩展本机函数
 		if(!handler){
-			handler = this[["__nativeFunctions__"]][[ xcallParams.method_name ]]
+			handler = this.__nativeFunctions__[xcallParams.method_name]
 		}
 		if( type(handler)!="function" ) return;
 		
@@ -45,8 +26,8 @@ namespace web.sciter.event{
 			var p = xcallParams.argv; // 参数数组指针
 			var tArgs = {};
 			for(i=1;argc;1){
-				var v = valueObjectLite();//禁止自动析构
-				
+				var v = valueObjectLite();
+				// 涉及到本机函数的，raw.convert的 都要用 valueObjectLite， 让 js 析构
 				raw_convert(p,v,offset);
 				offset += 16/*..raw.sizeof( valueObjectLite_t() )*/ 
 				v = v.getValue();
@@ -88,13 +69,13 @@ namespace web.sciter.event{
 
 util.metaProperty.extend( web.sciter, {
 	defineNativeFuntion = function(name, func){
-		owner[["__nativeFunctions__"]][name] = func
+		owner.__nativeFunctions__[name] = func
 	};
 	publish = function(name, data, post=true){
 		var evt = web.sciter.event.BEHAVIOR_EVENT_PARAMS();
 		evt.name = name;
 		evt.cmd = 0xF0/*CUSTOM*/
-		evt.data = valueObjectLite(data); // 这里必须禁止自动析构
+		evt.data = valueObject(data);
 
         var ret,handled = ::Sciter.FireEvent(evt, post, false); 
         return ret && handled;
@@ -102,7 +83,7 @@ util.metaProperty.extend( web.sciter, {
 })
 
 util.metaProperty.extend( valueObject,{
-	// js 调用本机函数传入了js函数类型的参数， 可以直接调用
+	// 调用 js 函数
 	xcall = function(url, thisObject, ...){ 
 		if(owner.type != 0xD/*T_OBJECT*/ || owner.units  != 4 /*UT_OBJECT_FUNCTION*/){
 			error("The value is not a script function",2);
@@ -127,21 +108,6 @@ util.metaProperty.extend( valueObject,{
 		var thisObject = valueObject(thisObject);
 		// 返回值
 		var retval = valueObject(); 
-		/***
-		/**
- 		* ValueInvoke - function invocation (Sciter/TIScript).
- 		* - VALUE* pval is a value of type T_OBJECT/UT_OBJECT_FUNCTION
- 		* - VALUE* pthis - object that will be known as 'this' inside that function.
- 		* - UINT argc, const VALUE* argv - vector of arguments to pass to the function. 
- 		* - VALUE* pretval - parse/emit MAP value without enclosing '{' and '}' brackets.
- 		* - LPCWSTR url - url or name of the script - used for error reporting in the script.
- 		* Returns:
- 		*   HV_OK, HV_BAD_PARAMETER or HV_INCOMPATIBLE_TYPE
- 		*/
-		UINT SCAPI ValueInvoke( const VALUE* pval, VALUE* pthis, UINT argc, const VALUE* argv, VALUE* pretval, LPCWSTR url);
-		
-								INT(struct val,struct &this,INT argc,struct argv,struct &pretval,ustring url)
-		***/
 
 		if( 0/*_HL_HV_OK*/ == ::Sciter.ValueInvoke(owner, thisObject, #args, #args ? {struct args[]=args} : {} , retval, url) ){
 			// owner 是 clone 产生的，要手动清理
@@ -152,103 +118,14 @@ util.metaProperty.extend( valueObject,{
 			return retval;
 		}		
 	};
-	setValue = function(v,units,dataType,ownerObject){  
-      	var ta = type(v); 
-      	if( ta == "string" ){
-      		owner.setString(v);
-      	}
-      	elseif( ta == "number" ){
-      		if( type(units) == type.string ){
-      			units = VALUE_UNIT_TYPE[units];
-      		}; 
-      		if( ! ( units && dataType) ){
-      			var re,oldType,oldUnits= ::Sciter.ValueType( owner,0,0 );
-      			if(!units) units = oldUnits : 0;
-      			
-      			
-      			if(!dataType){
-      				if( oldType )
-      					dataType = oldType;
-      				else{
-      					var n,f = ..math.modf(v);
-      					dataType = f ? 4/*_HL_T_FLOAT*/ : 3/*_HL_T_INT*/; 
-      				}
-      			}
-      		}
 
-      		if( dataType == 3/*_HL_T_INT*/ ){
-      			owner.setInt32(v,units)
-      		}
-      		elseif( dataType == 4/*_HL_T_FLOAT*/){
-      			owner.setNumber(v,units)
-      		}
-      		else{
-      			owner.setLong64(v,units)
-      		} 
-      	}
-      	elseif( ta == "boolean" ){
-      		::Sciter.ValueIntDataSet(owner, v?1:0, 2/*_HL_T_BOOL*/, 0); 
-      	}
-      	elseif( ta ==  "table" ){ 
-      		
-      		if( ( v@ == _metaProperty ) && ( v._struct == owner._struct ) ){
-      			::Sciter.ValueCopy(owner,v);
-      		}
-      		elseif( ..time.istime(v) ){
-      			owner.setTime( v );
-      		}
-      		elseif(..web.sciter.element.is(v)){ 
-      			owner.setEle( v );
-      		} 
-      		else{
-      			if( ..table.isArray(v) ){
-      				for(i=1;#v;1){
-      					::Sciter.ValueNthElementValueSet( owner,i-1,valueObjectLite( v[i] ) );
-      				} 
-      			}
-      			else {
-      				for name,value in ..table.eachName(v){
-      					::Sciter.ValueSetValueToKey(owner,valueObjectLite(name),valueObjectLite(value,,,v)); 
-      				}
-      			}
-      		}
-      	}
-      	elseif( ta ==  "null" ){ 
-      		::Sciter.ValueClear(owner);
-      	}
-      	elseif( ta == "function" ){
-      		ValueNativeFunctorSet(owner,v,ownerObject);
-      	}
-      	elseif( ta  == "buffer" ){
-      		owner.setBinary(v);
-      	}
-      	else {
-      		error("错误的参数类型",2)
-      	};
-    };
 })
 
 namespace aaz;
 class sciterEx{
 	ctor(...){
 		this = ..web.sciter(...);
-		this[["__nativeFunctions__"]] = {};
-		
-		this.script = {
-			@{
-				_set = function(k,v){
-					if(type(k)!="string")error("字段名必须是字符串");
-					::Sciter.SetVariable(this.hwnd, k, valueObjectLite(v)); //禁止自动析构
-				};
-				_get = function(k){
-					if(type(k)!="string")error("字段名必须是字符串");
-					
-					var v = valueObject();
-					::Sciter.GetVariable(this.hwnd, k, v);
-					return v.getValue();
-				};
-			};	
-		}
+		this.__nativeFunctions__ = {};
 	};
 }
 
